@@ -40,7 +40,7 @@ export function buildVariant(spec) {
   const root = new T.Group(),
     body = new T.Group();
   root.add(body);
-  const coat = paint(spec.paint??spec.color, {
+  const coat = paint(spec.paint ?? spec.color, {
     roughness: 0.36,
     metalness: 0.19,
     side: T.DoubleSide,
@@ -395,25 +395,26 @@ export function buildVariant(spec) {
   else if (spec.id === "semi") semi();
   else {
     sport();
-    if(spec.id==="u9"){
-      const satin=paint("#a68747",{metalness:.69,roughness:.54});
-      for(const side of [-1,1]){
-        block(satin,side*.91,.34,-.25,.11,.08,2.9);
-        block(satin,side*.68,.72,-1.03,.035,.025,.97);
-        block(trim,side*.63,.91,1.74,.085,.49,.27);
+    if (spec.id === "u9") {
+      const satin = paint("#a68747", { metalness: 0.69, roughness: 0.54 });
+      for (const side of [-1, 1]) {
+        block(satin, side * 0.91, 0.34, -0.25, 0.11, 0.08, 2.9);
+        block(satin, side * 0.68, 0.72, -1.03, 0.035, 0.025, 0.97);
+        block(trim, side * 0.63, 0.91, 1.74, 0.085, 0.49, 0.27);
       }
-      block(trim,0,1.16,1.78,2.12,.065,.42);
-      block(satin,0,1.20,1.94,2.12,.02,.045);
-      block(trim,0,.78,-1.46,.6,.04,.51);
+      block(trim, 0, 1.16, 1.78, 2.12, 0.065, 0.42);
+      block(satin, 0, 1.2, 1.94, 2.12, 0.02, 0.045);
+      block(trim, 0, 0.78, -1.46, 0.6, 0.04, 0.51);
     }
-    if(spec.id==="i8"){
-      const blue=paint("#369dca");
-      for(const side of [-1,1]){
-        block(trim,side*.27,.44,-2.24,.44,.15,.045);
-        block(blue,side*.27,.52,-2.25,.44,.024,.045);
-        const blade=block(coat,side*.86,.83,.85,.12,.17,1.3); blade.rotation.x=.36;
-        block(blue,side*.98,.35,.14,.08,.05,1.8);
-        block(brake,side*.84,.64,2.14,.053,.21,.08);
+    if (spec.id === "i8") {
+      const blue = paint("#369dca");
+      for (const side of [-1, 1]) {
+        block(trim, side * 0.27, 0.44, -2.24, 0.44, 0.15, 0.045);
+        block(blue, side * 0.27, 0.52, -2.25, 0.44, 0.024, 0.045);
+        const blade = block(coat, side * 0.86, 0.83, 0.85, 0.12, 0.17, 1.3);
+        blade.rotation.x = 0.36;
+        block(blue, side * 0.98, 0.35, 0.14, 0.08, 0.05, 1.8);
+        block(brake, side * 0.84, 0.64, 2.14, 0.053, 0.21, 0.08);
       }
     }
   }
@@ -421,9 +422,10 @@ export function buildVariant(spec) {
     root,
     update(state, roll, braking) {
       body.rotation.z =
-        (state.bank??0) + state.steer * Math.min(0.05, Math.abs(state.speed) * 0.004);
-      body.rotation.x=state.pitch??0;
-      body.position.y=-(state.compression??0)*.09;
+        (state.bank ?? 0) +
+        state.steer * Math.min(0.05, Math.abs(state.speed) * 0.004);
+      body.rotation.x = state.pitch ?? 0;
+      body.position.y = -(state.compression ?? 0) * 0.09;
       for (const w of wheels) {
         w.wheel.rotation.x = (roll * 0.324) / w.r;
         if (w.steering) w.pivot.rotation.y = state.steer;

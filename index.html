@@ -42,7 +42,9 @@
       </div>
       <span class="division"></span
       ><span class="product">Driving simulator</span>
-      <button id="choose-course" class="course-button" aria-haspopup="dialog"><svg><use href="#pin" /></svg> Menu <kbd>X</kbd></button>
+      <button id="choose-course" class="course-button" aria-haspopup="dialog">
+        <svg><use href="#pin" /></svg> Menu <kbd>X</kbd>
+      </button>
       <div class="status">
         <span class="live"><i></i>System online</span
         ><span class="division"></span
@@ -105,7 +107,16 @@
           <span>Brake</span>
           <div class="segments" id="brake"></div>
         </div>
-        <div class="meter"><span>Boost</span><meter id="boost-level" max="1" value="0"></meter></div><div class="meter"><span>Regen</span><meter id="regen-level" max="4" value="0"></meter></div><div class="meter"><span>Handbrake</span><meter id="hand-level" max="1" value="0"></meter></div>
+        <div class="meter">
+          <span>Boost</span><meter id="boost-level" max="1" value="0"></meter>
+        </div>
+        <div class="meter">
+          <span>Regen</span><meter id="regen-level" max="4" value="0"></meter>
+        </div>
+        <div class="meter">
+          <span>Handbrake</span
+          ><meter id="hand-level" max="1" value="0"></meter>
+        </div>
         <div class="meter">
           <span>Steer</span>
           <div class="steering-readout">
@@ -115,7 +126,11 @@
           </div>
         </div>
       </section>
-      <section class="accel-panel"><div class="panel-title">Acceleration</div><small>Longitudinal</small><output id="long-accel"></output><small>Vertical</small><output id="vert-accel"></output></section>
+      <section class="accel-panel">
+        <div class="panel-title">Acceleration</div>
+        <small>Longitudinal</small><output id="long-accel"></output
+        ><small>Vertical</small><output id="vert-accel"></output>
+      </section>
       <section class="cluster" aria-label="Vehicle instruments">
         <div class="speed-row">
           <div class="speed-group">
@@ -125,7 +140,8 @@
           </div>
           <div class="gear-group"><b id="gear">N</b><small>Gear</small></div>
         </div>
-        <div id="motion-info"></div><div class="revbar" aria-hidden="true"></div>
+        <div id="motion-info"></div>
+        <div class="revbar" aria-hidden="true"></div>
       </section>
       <div class="flight-controls" hidden>
         <button data-control="rise"><kbd>E</kbd> Rise</button
@@ -163,7 +179,9 @@
         <button data-control="handbrake">
           <kbd>Space</kbd><span>Handbrake</span>
         </button>
-        <button data-control="boost"><kbd>Shift</kbd><span>Boost</span></button><button data-control="jump"><kbd>J</kbd><span>Jump</span></button><button data-control="reset"><kbd>R</kbd><span>Reset</span></button>
+        <button data-control="boost"><kbd>Shift</kbd><span>Boost</span></button
+        ><button data-control="jump"><kbd>J</kbd><span>Jump</span></button
+        ><button data-control="reset"><kbd>R</kbd><span>Reset</span></button>
         <button data-control="camera"><kbd>C</kbd><span>Camera</span></button>
         <button data-control="next" title="Scroll to change vehicle">
           <kbd>SCROLL</kbd><span>Vehicle</span>
@@ -171,15 +189,30 @@
       </div>
     </footer>
     <dialog id="course-dialog" aria-labelledby="course-title">
-      <div class="dialog-heading"><h2 id="course-title">Drive</h2><button class="close" aria-label="Close menu">×</button></div>
-      <div class="menu-layout"><nav id="menu-tabs" aria-label="Main menu"></nav><section id="menu-pane"></section></div><p id="menu-status" role="status"></p>
+      <div class="dialog-heading">
+        <h2 id="course-title">Drive</h2>
+        <button class="close" aria-label="Close menu">×</button>
+      </div>
+      <div class="menu-layout">
+        <nav id="menu-tabs" aria-label="Main menu"></nav>
+        <section id="menu-pane"></section>
+      </div>
+      <p id="menu-status" role="status"></p>
     </dialog>
     <dialog id="result-dialog" aria-labelledby="result-title">
-      <div class="dialog-heading"><h2 id="result-title">Race results</h2><button class="close" aria-label="Close results">×</button></div>
+      <div class="dialog-heading">
+        <h2 id="result-title">Race results</h2>
+        <button class="close" aria-label="Close results">×</button>
+      </div>
       <p id="result-course"></p>
-      <div class="result-time"><span>Total time</span><strong id="result-time"></strong></div>
+      <div class="result-time">
+        <span>Total time</span><strong id="result-time"></strong>
+      </div>
       <dl id="result-stats"></dl>
-      <div class="result-actions"><button id="result-retry" class="primary-button">Race again</button><button id="result-courses" class="secondary-button">Courses</button></div>
+      <div class="result-actions">
+        <button id="result-retry" class="primary-button">Race again</button
+        ><button id="result-courses" class="secondary-button">Courses</button>
+      </div>
     </dialog>
     <script type="module" src="/src/main.js"></script>
   </body>

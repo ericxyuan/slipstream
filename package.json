@@ -1,13 +1,16 @@
 {
   "name": "slipstream",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test"
+    "test": "node --test",
+    "dev:party": "vite build && wrangler dev --local",
+    "smoke:party": "node scripts/party-smoke.mjs",
+    "deploy": "pnpm test && pnpm build && wrangler deploy"
   },
   "dependencies": {
     "three": "0.180.0"

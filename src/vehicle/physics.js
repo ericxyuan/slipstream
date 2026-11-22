@@ -1,3 +1,4 @@
+import { wheelDrive } from "./powertrain.js";
 import { surfaceAt } from "../world/surfaces.js";
 import { lift, flight } from "./lift.js";
 import { vehicles } from "./catalog.js";
@@ -18,7 +19,22 @@ export const SPAWN = {
   rearThrust: 0,
   sideThrust: 0,
   airborne: 0,
-  groundSpeed: 0, support:1, mode:0, acceleration:0, verticalAccel:0, lateralAccel:0, peakAccel:0, regen:0, energy:0, battery:.75, boost:0, pitch:0, bank:0, compression:0, impact:0,
+  groundSpeed: 0,
+  support: 1,
+  mode: 0,
+  acceleration: 0,
+  verticalAccel: 0,
+  lateralAccel: 0,
+  peakAccel: 0,
+  regen: 0,
+  energy: 0,
+  battery: 0.75,
+  boost: 0,
+  engineLoad: 0,
+  pitch: 0,
+  bank: 0,
+  compression: 0,
+  impact: 0,
   wheelSlip: 0,
 };
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -46,8 +62,7 @@ export class VehiclePhysics {
       { length: count },
       (_, i) => -end + (i * 2 * end) / (count - 1),
     );
-    if (spec.flying)
-      this.hoverTarget = Math.max(0, this.state?.altitude ?? 0);
+    if (spec.flying) this.hoverTarget = Math.max(0, this.state?.altitude ?? 0);
   }
   setCourse(course, obstacles) {
     this.course = course;
@@ -65,7 +80,9 @@ export class VehiclePhysics {
     this.yawRate = 0;
     this.vx = 0;
     this.vz = 0;
-    this.cooldown=0;this.jumpHeld=false;this.preload=0;
+    this.cooldown = 0;
+    this.jumpHeld = false;
+    this.preload = 0;
     this.reverseDelay = 0;
     this.roll = 0;
     this.previousRoll = 0;
@@ -75,15 +92,16 @@ export class VehiclePhysics {
       h = this.spec.handling;
     Object.assign(this.previous, s);
     this.previousRoll = this.roll;
-    lift(this,input,dt);
-    const surface=surfaceAt(this.course,s.x,s.z);
-    const flying=!!(this.spec.flying&&s.airborne);
-    const previousVX=this.vx,previousVZ=this.vz;
-    s.impact=0;
-    s.boost=damp(s.boost,input.boost&&input.forward?1:0,9,dt);
-    const boost=1+s.boost*(this.spec.mass>5000?.29:.19);
-    const balanced=this.course?.config?.rules==="balanced";
-    s.verticalAccel=(s.verticalSpeed-this.previous.verticalSpeed)/dt;
+    lift(this, input, dt);
+    const surface = surfaceAt(this.course, s.x, s.z);
+    const flying = !!(this.spec.flying && s.airborne);
+    const previousVX = this.vx,
+      previousVZ = this.vz;
+    s.impact = 0;
+    s.boost = damp(s.boost, input.boost && input.forward ? 1 : 0, 9, dt);
+    const boost = 1 + s.boost * (this.spec.mass > 5000 ? 0.29 : 0.19);
+    const balanced = this.course?.config?.rules === "balanced";
+    s.verticalAccel = (s.verticalSpeed - this.previous.verticalSpeed) / dt;
     const fwdX = -Math.sin(s.heading),
       fwdZ = -Math.cos(s.heading);
     let speed = this.vx * fwdX + this.vz * fwdZ;
@@ -120,9 +138,7 @@ export class VehiclePhysics {
     const lock = Math.min(
       h.steeringLock,
       Math.atan(
-        ((surface?.grip ?? 1) *
-          h.cornering *
-          this.spec.wheelbase) /
+        ((surface?.grip ?? 1) * h.cornering * this.spec.wheelbase) /
           (speed * speed + 0.01),
       ),
     );
@@ -137,7 +153,8 @@ export class VehiclePhysics {
     s.sideThrust =
       Number(flying) *
       clamp(
-        (flight.control * (desiredYaw - this.yawRate) + yawDrag * this.yawRate) /
+        (flight.control * (desiredYaw - this.yawRate) +
+          yawDrag * this.yawRate) /
           jetAuthority,
         -1,
         1,
@@ -149,33 +166,78 @@ export class VehiclePhysics {
     s.heading += this.yawRate * dt;
     const fX = -Math.sin(s.heading),
       fZ = -Math.cos(s.heading);
-    const maxSpeed = (drive < 0 ? h.reverseLimit : flying?flight.speed:balanced?75:h.limit)*boost;
+    const maxSpeed =
+      (drive < 0
+        ? h.reverseLimit
+        : flying
+          ? flight.speed
+          : balanced
+            ? 75
+            : h.limit) * boost;
     const powerCurve = Math.max(
       0,
       1 - Math.pow(Math.max(0, speed * Math.sign(drive)) / maxSpeed, 2),
     );
     const demand =
-      drive * (drive < 0 ? h.launch * 0.52 : balanced?10:h.launch) * powerCurve * boost;
+      drive *
+      (drive < 0 ? h.launch * 0.52 : balanced ? 10 : h.launch) *
+      powerCurve *
+      boost;
 
-    const traction = (surface?.traction ?? Infinity)*(this.spec.id==="rally"&&surface?.grip<.7?1.35:1);
-    const motor = clamp(demand, -traction, traction);
+    const traction =
+      (surface?.traction ?? Infinity) *
+      (this.spec.id === "rally" && surface?.grip < 0.7 ? 1.35 : 1);
+    const motor = s.airborne
+      ? 0
+      : wheelDrive(
+          this.spec,
+          demand,
+          traction * Math.max(0.05, s.support),
+          s,
+          s.steeringInput,
+        );
     // Excess drive spins the tyres. Grip and tyre relaxation bring their tread
     // speed back towards road speed as the available traction catches up.
     this.spinSpeed *= Math.exp(-3 * dt);
-    this.spinSpeed += (demand - motor) * 4 * dt * (1-s.airborne);
-    if(s.airborne)this.spinSpeed=0;
+    this.spinSpeed += (demand - motor) * 4 * dt * (1 - s.airborne);
+    if (s.airborne) this.spinSpeed = 0;
     const treadSpeed = speed + this.spinSpeed;
     s.wheelSlip =
       Math.abs(this.spinSpeed) /
       Math.max(1, Math.abs(treadSpeed), Math.abs(speed));
-    const regenLimit=s.battery<.999 && this.spec.electric && !s.airborne?Math.min(traction,Math.abs(speed)/dt,Math.abs(speed)*.9):0;
-    s.regen=Math.min(regenLimit,(1-s.throttle)*(1.5+2.5*s.brake));
-    const recovered=s.regen*this.spec.mass*Math.abs(speed)*dt*.75/3600000;
-    s.energy+=recovered;
-    if(this.spec.electric)s.battery=clamp(s.battery+(recovered-Math.abs(drive*speed)*this.spec.mass*dt*.00000018)/this.spec.batteryKWh,0,1);
-    const rolling=this.spec.electric?.045:h.coast;
-    const resistance = rolling*(surface?.rolling??1)*(1-s.throttle)+s.regen+
-      (1-s.throttle)*h.drag*speed*speed+Math.max(0,Math.min(h.braking,traction)*s.brake-s.regen*s.brake);
+    const regenLimit =
+      s.battery < 0.999 && this.spec.electric && !s.airborne
+        ? Math.min(traction, Math.abs(speed) / dt, Math.abs(speed) * 0.9)
+        : 0;
+    s.regen = Math.min(regenLimit, (1 - s.throttle) * (1.5 + 2.5 * s.brake));
+    const recovered =
+      (s.regen * this.spec.mass * Math.abs(speed) * dt * 0.75) / 3600000;
+    s.energy += recovered;
+    if (this.spec.electric) {
+      const electricShare = this.spec.hybrid ? 1 - s.engineLoad * 0.65 : 1;
+      const propulsiveForce =
+        s.airborne && flying
+          ? flight.drive * Math.max(0, drive)
+          : Math.abs(motor);
+      const used =
+        (propulsiveForce *
+          this.spec.mass *
+          Math.abs(speed) *
+          dt *
+          electricShare) /
+        (0.91 * 3600000);
+      s.battery = clamp(
+        s.battery + (recovered - used) / this.spec.batteryKWh,
+        0,
+        1,
+      );
+    }
+    const rolling = this.spec.electric ? 0.045 : h.coast;
+    const resistance =
+      rolling * (surface?.rolling ?? 1) * (1 - s.throttle) +
+      s.regen +
+      (1 - s.throttle) * h.drag * speed * speed +
+      Math.max(0, Math.min(h.braking, traction) * s.brake - s.regen * s.brake);
     const roadSpeed = approach(speed, 0, resistance * dt) + motor * dt;
     const slip =
       lateral *
@@ -187,18 +249,24 @@ export class VehiclePhysics {
     // alone does not rotate the stored momentum or drive the wheels.
     s.rearThrust = Math.max(0, drive) * Number(flying) * powerCurve;
     const jetAcceleration =
-      flight.drive * boost * s.rearThrust + Math.min(0, drive) * 9 * Number(flying) * powerCurve;
+      flight.drive * boost * s.rearThrust +
+      Math.min(0, drive) * 9 * Number(flying) * powerCurve;
     const magnitude = Math.hypot(this.vx, this.vz);
     const airLoss =
       magnitude > 0
         ? Math.max(
             0,
-            1 - dt * ((flying?.12:.005)*(1-s.throttle) + (flying?flight.brake*s.brake:0) / magnitude),
+            1 -
+              dt *
+                ((flying ? 0.12 : 0.005) * (1 - s.throttle) +
+                  (flying ? flight.brake * s.brake : 0) / magnitude),
           )
         : 1;
-    const sideLoss=flying?lateral*(1-Math.exp(-flight.damping*dt)):0;
-    const airVX = this.vx * airLoss + fX * jetAcceleration * dt + fZ*sideLoss,
-      airVZ = this.vz * airLoss + fZ * jetAcceleration * dt - fX*sideLoss;
+    const sideLoss = flying
+      ? lateral * (1 - Math.exp(-flight.damping * dt))
+      : 0;
+    const airVX = this.vx * airLoss + fX * jetAcceleration * dt + fZ * sideLoss,
+      airVZ = this.vz * airLoss + fZ * jetAcceleration * dt - fX * sideLoss;
     this.vx = roadVX + (airVX - roadVX) * s.airborne;
     this.vz = roadVZ + (airVZ - roadVZ) * s.airborne;
     s.x += this.vx * dt;
@@ -210,6 +278,7 @@ export class VehiclePhysics {
       )
         continue;
       if (s.altitude > (o.height ?? Infinity) + 0.1) continue;
+      if (s.altitude + this.spec.height < (o.minY ?? 0)) continue;
       for (const offset of this.offsets) {
         const dx = s.x + fX * offset - o.x,
           dz = s.z + fZ * offset - o.z,
@@ -248,7 +317,7 @@ export class VehiclePhysics {
         s.z += nz * penetration;
         const impact = this.vx * nx + this.vz * nz;
         if (impact < 0) {
-          s.impact=Math.max(s.impact,-impact);
+          s.impact = Math.max(s.impact, -impact);
           this.vx -= 1.07 * impact * nx;
           this.vz -= 1.07 * impact * nz;
         }
@@ -265,11 +334,23 @@ export class VehiclePhysics {
     s.z = z;
     s.speed = this.vx * fX + this.vz * fZ;
     s.groundSpeed = Math.hypot(this.vx, this.vz);
-    s.acceleration=((this.vx-previousVX)*fX+(this.vz-previousVZ)*fZ)/dt;
-    s.lateralAccel=(-(this.vx-previousVX)*fZ+(this.vz-previousVZ)*fX)/dt;
-    s.peakAccel=Math.max(s.peakAccel,s.acceleration);
-    s.pitch=damp(s.pitch,flying?-s.verticalSpeed/flight.climb*flight.pitch:0,flight.control,dt);
-    s.bank=damp(s.bank,flying?-s.steeringInput*flight.bank:0,flight.control,dt);
+    s.acceleration =
+      ((this.vx - previousVX) * fX + (this.vz - previousVZ) * fZ) / dt;
+    s.lateralAccel =
+      (-(this.vx - previousVX) * fZ + (this.vz - previousVZ) * fX) / dt;
+    s.peakAccel = Math.max(s.peakAccel, s.acceleration);
+    s.pitch = damp(
+      s.pitch,
+      flying ? (-s.verticalSpeed / flight.climb) * flight.pitch : 0,
+      flight.control,
+      dt,
+    );
+    s.bank = damp(
+      s.bank,
+      flying ? -s.steeringInput * flight.bank : 0,
+      flight.control,
+      dt,
+    );
     this.roll -= (((s.speed + this.spinSpeed) * dt) / 0.324) * (1 - s.airborne);
   }
   sample(alpha, target) {

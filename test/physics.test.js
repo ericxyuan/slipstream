@@ -164,7 +164,7 @@ test("rocket thrust moves the airborne car with stationary wheels, including whe
   assert.ok(car.state.heading > 0.4);
   assert.equal(car.state.steer, 0);
   assert.equal(car.roll, originalRoll);
-  assert.equal(car.state.rearThrust,0);
+  assert.equal(car.state.rearThrust, 0);
   assert.ok(car.state.groundSpeed < 25); // Lateral stabilisers bleed drift during an unpowered turn.
   drive(car, 1, { forward: true });
   assert.ok(car.vx < coastingX - 3);

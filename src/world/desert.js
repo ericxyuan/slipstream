@@ -7,6 +7,10 @@ export function buildDesert(scene) {
     collisions = [],
     rand = randomSource(48163);
   scene.add(props);
+  const loose = (scene.userData.roadside = []);
+  function roadside(kind, x, z, size = 1, angle = 0) {
+    loose.push({ kind, x, z, size, angle });
+  }
   const terrain = paint("#cf9a6c", { map: grainTexture(224, 28, 58) });
   terrain.map.repeat.set(350, 350);
   const ground = solid(scene, new T.PlaneGeometry(2000, 2000), terrain);
@@ -140,13 +144,21 @@ export function buildDesert(scene) {
       size * (0.35 + rand() * 0.42),
       size,
     );
+    if (size > 0.28 && size < 1.3 && roadDistance(x, z) < 24) {
+      props.remove(m);
+      g.dispose();
+      roadside("rock", x, z, size);
+      return;
+    }
     if (size > 0.65)
       collisions.push({ x, z, rx: size * 1.18, rz: size, height: size });
   }
   function cactus(x, z, h) {
     const mat = greens[Math.floor(rand() * 3)],
       r = h * 0.055;
+    const loosePlant = roadDistance(x, z) < 23;
     function limb(points, rad) {
+      if (loosePlant) return;
       const curve = new T.CatmullRomCurve3(
         points.map((p) => new T.Vector3(...p)),
       );
@@ -185,6 +197,10 @@ export function buildDesert(scene) {
         ],
         r * 0.72,
       );
+    }
+    if (loosePlant) {
+      roadside("plant", x, z, h);
+      return;
     }
     collisions.push({ x, z, rx: r * 1.3, rz: r * 1.3, height: h });
   }
@@ -247,6 +263,10 @@ export function buildDesert(scene) {
     black = paint("#302d2b"),
     reflector = paint("#c58136");
   function marker(x, z) {
+    if (Math.abs(z) < 55) {
+      roadside("post", x, z);
+      return;
+    }
     box(props, post, x, 0.48, z, 0.105, 0.96, 0.12);
     box(props, black, x, 0.8, z, 0.11, 0.21, 0.126);
     box(props, reflector, x, 0.81, z + 0.066, 0.075, 0.055, 0.008);
@@ -299,7 +319,11 @@ export function buildDesert(scene) {
       0.065,
     );
     panel.rotation.z = Math.PI / 4;
-    collisions.push({ x, z, rx: 0.13, rz: 0.13, height: 2.7 });
+    roadside("sign", x, z, 1, angle);
+    props.remove(obj);
+    obj.traverse((o) => o.geometry?.dispose());
+    tex.dispose();
+    panel.material.dispose();
   }
   sign(9.7, -15, 0.04);
   sign(-116, 62, Math.PI);

@@ -1,58 +1,58 @@
-# Slipstream
+# SlipStream
 
-A playable Three.js driving prototype with four selectable courses. The scene, vehicle and instruments are generated locally. Gameplay requires a WebGL 2 browser.
+A browser driving game built with Three.js, Vite and a shared 120 Hz vehicle simulation. Four environments support solo driving and party races. Cloudflare serves the compiled game and coordinates each party in a separate Durable Object.
 
-## Run locally
+## Run
 
-Use Node.js 22.12 or newer and pnpm.
+Use Node 24 and pnpm 11. Install with `pnpm install --frozen-lockfile`.
 
-```sh
-pnpm install
-pnpm dev
-```
+| Command | Purpose |
+| --- | --- |
+| `pnpm dev` | Solo development with hot reload |
+| `pnpm dev:party` | Build and run the frontend and multiplayer Worker together locally |
+| `pnpm test` | Run physics, race, configuration and vehicle regression tests |
+| `pnpm build` | Produce the static game in `dist/` |
+| `pnpm smoke:party http://localhost:8787` | Exercise two independent clients against the running Worker |
+| `pnpm deploy` | Test, build and release with the signed-in Cloudflare account |
 
-Open the local URL printed by Vite. Use `pnpm build` for a production build and `pnpm preview` to run it locally.
+Open the URL printed by the chosen development server. WebGL 2 is required. Sound starts following a keyboard or pointer gesture.
 
-Run the physics regression tests with `pnpm test`.
+## Driving and racing
 
-## Courses
+Use WASD or the arrow keys to drive, Space for the handbrake and Shift for boost. Drag with the left mouse button to look around. C recenters an adjusted camera before cycling views. E and Q control Roadster lift. J preloads and releases the U9 suspension once per press. R resets solo driving. Scroll advances through the three vehicles selected in Active Rotation.
 
-Open **Courses** to switch maps.
+X opens the menu. Maps enters free drive. Race Configuration chooses the map, route, direction, start and finish, gate count, surface sections, lap count, countdown, collisions, DNF timeout and competition rules. Named presets stay in the browser. The course preview uses the same path as the gate detector. Drag distances on existing maps are limited to the usable straight. Meridian supports 50–2,000 metres. Circuit starts wrap around the closed route. F arms a race, Esc cancels its countdown, and early propulsion input records a false start. Open menus pause solo driving. Party clocks and other drivers continue.
 
-- **Redrock Basin** is the original desert free drive.
-- **Meridian Strip** accepts whole-metre distances from 50 to 2,000 m. Choose prepared asphalt, wet asphalt, loose gravel or packed ice. Select **Arm launch** to start the three lights. Holding the throttle stages the car for an automatic launch at green. Pressing the throttle after green records your reaction time. Total time runs from green to the finish line. The timing slip also shows peak acceleration, speed and driven-wheel slip.
-- **Foundry City** is a timed street lap. Follow the mint arrows and pass each checkpoint in sequence before crossing the start/finish line.
-- **Tesla Skyway** puts you in the flying Roadster for eight aerial gates. Use E and Q to match the next gate’s altitude. Leaving the course restores your previous vehicle.
+Create or join a four-letter code under Multiplayer. The host sets the event. Drivers choose their vehicle and mark themselves ready. The host starts the countdown after everyone is ready. Player input travels over WebSockets. The server runs movement, checks each directed gate and resolves vehicle and prop impulses. Results include valid finishes, false starts and DNF. A disconnected browser may reconnect with its session token during the 30-second grace period. Empty rooms expire. Up to twelve drivers are supported per party.
 
-## Drive
+## Vehicles and simulation
 
-| Input          | Action                                     |
-| -------------- | ------------------------------------------ |
-| W or ↑         | Accelerate                                 |
-| S or ↓         | Brake, then reverse while held             |
-| A / D or ← / → | Steer                                      |
-| Space          | Handbrake                                  |
-| R              | Return to the starting position            |
-| C              | Cycle chase, wide chase and bonnet cameras |
-| Scroll wheel   | Select the next or previous vehicle        |
-| E / Q          | Raise or lower the flying Roadster         |
+| Vehicle | Reference or game target | Top speed |
+| --- | --- | --- |
+| Rally coupe | 3.1 s to 100 km/h, 1,550 kg | 265 km/h |
+| Sports coupe | 2.1 s to 100 km/h, 1,350 kg | 345 km/h |
+| School bus | 4.2 s to 100 km/h, 9,000 kg | 205 km/h |
+| Semi tractor | 4.0 s to 100 km/h, 15,000 kg | 230 km/h |
+| Tesla Roadster Rocket | Specification reference of under 0.59 s to **60 mph**. Sustained flight and estimated mass are game parameters. | 375 km/h ground tune |
+| Yangwang U9 Xtreme | Four motors, 1,200 V, approximately 2,220 kW / 3,019 PS. Dawn Moment black and gold colourway. | 503.17 km/h recorded |
+| 2018–2020 BMW i8 Coupé | Plug-in hybrid AWD, 275 kW / 374 PS, 4.4 s to 100 km/h | 250 km/h |
 
-The five vehicles are the rally coupe, light-blue sports coupe, yellow school bus, white semi tractor and white Tesla Roadster 2 Rocket Edition. Switching keeps your position, heading and momentum while the outgoing body breaks apart and the new one assembles. The browser remembers the last selection for this site.
+The first four figures are fictional game targets on a prepared straight. The garage's U9 launch and Roadster mass are estimates. The U9's game jump uses the standard U9's short stationary suspension jump as a reference. Its separate moving demonstration concerns horizontal travel. The simulator does not claim an Xtreme jump measurement.
 
-The control strip and vehicle arrows also support pointer and touch input. The HUD uses the selected vehicle’s colour and shows its plate, speed, gear, progressive pedal inputs, steering and measured FPS. The north-up minimap follows your position and heading on the selected course.
+Cold-gas flight uses named baseline capabilities with a 1.8 multiplier. Tyre support decides which propulsion system can apply longitudinal force. The HUD samples the actual simulated acceleration and regen torque. Nominal 1.5 m/s² lift-off regeneration fills 37.5% of the 4 m/s² gauge. Recovered energy, battery reserve, speed and surface grip affect the result.
 
-## Handling
+Vehicle references include [BYD's speed record announcement](https://www.byd.com/mea/news-list/yangwang-u9-xtrem-tops-500kmh), [BMW's facelift specifications](https://www.press.bmwgroup.com/global/article/detail/T0286588EN/specifications-of-the-bmw-i8-coupe-valid-from-09-2018) and [Tesla's Roadster page](https://www.tesla.com/roadster).
 
-Each vehicle defines its own launch acceleration, braking, coasting resistance, cornering limit, pedal response and steering response. The rally coupe turns in quickly, the sports coupe has more tarmac grip, the school bus has a gradual launch and a wide turn, and the semi is tuned as a tractor without a trailer. The electric Roadster has stronger lift-off deceleration on the ground. In flight, its nose can turn independently of its momentum. Holding W applies rear thrust, while E and Q change the target hover height.
+## Source and deployment
 
-These are game calibrations. The sports coupe draws on Porsche’s mid-engine 718, the rally coupe on Subaru’s AWD rally cars, and the heavy vehicles on school-bus performance requirements and Freightliner’s description of unloaded tractor braking. The Roadster’s white paint and cold-gas jets reference Tesla’s Rocket demonstration. [Porsche 718](https://newsroom.porsche.com/en/products/porsche-cayman-model-series-718-sport-coupe-12475.html) · [Subaru rally cars](https://www.subaru.com/Motorsports/subaru-motorsports-usa/usa-rally-car-lineup.html) · [Florida school bus specifications](https://www.fldoe.org/core/fileparse.php/7585/urlt/0085480-floridaschoolbusspecifications.pdf) · [Freightliner Cascadia driver’s manual](https://dtnacontent-dtna.prd.freightliner.com/content/dam/enterprise/documents/Cascadia%20Drivers%20Manual_.pdf) · [Tesla Roadster](https://www.tesla.com/roadster?redirect=no)
+- `src/world` defines metre-scaled maps, roads, surfaces, procedural scenery and collision shapes.
+- `src/vehicle` contains models, data, flight, powertrains, geometry transitions and the vehicle simulation.
+- `src/systems` handles racing, audio, input, camera, instruments, remote drivers and menus.
+- `worker/index.js` validates room access, runs authoritative simulation and persists party state.
+- `scripts/party-smoke.mjs` checks host permissions, a shared grid, movement, reconnection, a timed finish, DNF and identical results on both clients.
 
-## Structure
+GitHub Actions checks pull requests, packages a downloadable preview and exercises real WebSocket connections against Wrangler. Pushes to main additionally deploy and run a production smoke test. Set repository Actions secrets `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` to enable unattended deployment. Use a deployment token restricted to the target account and Workers deployment permissions. Keep Wrangler login files and development secrets outside source control.
 
-- `src/main.js` owns startup, the animation loop, interpolation, resize and context recovery.
-- `src/systems/` contains the renderer, camera rig, keyboard and pointer input, and HUD.
-- `src/vehicle/physics.js` integrates a planar bicycle model at 120 Hz with lateral grip, rolling resistance, aerodynamic drag, and collision response. Each vehicle uses a line of overlapping collision discs sized to its body. The Roadster uses a damped lift controller and rear thrust in flight. Its wheel rotation follows ground contact. World-space gas particles trace the lift and propulsion jets.
-- `src/vehicle/catalog.js` defines vehicle dimensions, plates and colours. `model.js` and `variants.js` build their meshes. `fleet.js` manages selection, while `assembly.js` handles the shared surface and particle transition.
-- `src/world/` builds the closed road, scenery, collision proxies and sky. Static scenery is batched by material and region.
+## Implementation limits
 
-One world unit represents one metre. Y points up and the car spawns facing negative Z. A bounded frame delta prevents background-tab delays from accumulating physics steps.
+The vehicles and buildings are hand-built procedural models. Handling is tuned for play on flat road surfaces. The simulation uses compound horizontal vehicle footprints and suspension travel, and the audio uses procedural synthesis. The route editor selects sections and checkpoints along predefined paths. These approximations allow the browser and room coordinator to run the same simulation. Two-client tests cover real races. Twelve-player load, mobile GPU performance and long-duration network conditions require separate testing.

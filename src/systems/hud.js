@@ -1,4 +1,4 @@
-import { accelerationText,motionNames } from "./readouts.js";
+import { accelerationText, motionNames } from "./readouts.js";
 import { Minimap } from "./minimap.js";
 import { gear } from "../vehicle/physics.js";
 const byId = (id) => document.getElementById(id);
@@ -57,10 +57,21 @@ export class Hud {
       e.classList.toggle("on", i < Math.round(s.brake * this.brake.length)),
     );
     this.steering.style.left = (50 - s.steeringInput * 50).toFixed(1) + "%";
-    byId("long-accel").textContent=accelerationText(s.acceleration);byId("vert-accel").textContent=accelerationText(s.verticalAccel);
-    byId("regen-level").value=s.regen;byId("boost-level").value=s.boost;byId("hand-level").value=input.handbrake?1:0;
-    this.speed.classList.toggle("boosting",s.boost>.1);
-    byId("motion-info").textContent=motionNames[Math.round(s.mode)]+(this.flying||s.airborne?" · "+s.altitude.toFixed(1)+" m · "+s.verticalSpeed.toFixed(1)+" m/s":"");
+    byId("long-accel").textContent = accelerationText(s.acceleration);
+    byId("vert-accel").textContent = accelerationText(s.verticalAccel);
+    byId("regen-level").value = s.regen;
+    byId("boost-level").value = s.boost;
+    byId("hand-level").value = input.handbrake ? 1 : 0;
+    this.speed.classList.toggle("boosting", s.boost > 0.1);
+    byId("motion-info").textContent =
+      motionNames[Math.round(s.mode)] +
+      (this.flying || s.airborne
+        ? " · " +
+          s.altitude.toFixed(1) +
+          " m · " +
+          s.verticalSpeed.toFixed(1) +
+          " m/s"
+        : "");
     this.map.update(s);
     if (this.flying) this.altitude.textContent = s.altitude.toFixed(1) + " m";
     const revs =
