@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#141618" />
+    <title>Slipstream — Driving Simulator</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%2317191a'/%3E%3Cpath d='m6 23 8-14h5l-8 14zm9 0 8-14h5l-8 14z' fill='%23ff853c'/%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <svg class="sprites" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <symbol id="pin" viewBox="0 0 24 24">
+          <path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z" />
+          <circle cx="12" cy="10" r="2.2" />
+        </symbol>
+        <symbol id="cam" viewBox="0 0 24 24">
+          <rect x="3" y="6.5" width="12" height="11" rx="2" />
+          <path d="m15 10 6-3v10l-6-3" />
+        </symbol>
+        <symbol id="keys" viewBox="0 0 24 24">
+          <rect x="2" y="5" width="20" height="14" rx="2" />
+          <path d="M5 9h2m2 0h2m2 0h2m2 0h2M5 12h2m2 0h2m2 0h2m2 0h2m-11 3h8" />
+        </symbol>
+        <symbol id="signal" viewBox="0 0 24 24">
+          <path d="M3 15h4l3-9 4 13 3-8 2 4h3" />
+        </symbol>
+      </defs>
+    </svg>
+    <header>
+      <div class="identity">
+        <svg class="mark" viewBox="0 0 45 32" aria-hidden="true">
+          <path d="M1 29 17 3h10L11 29zm15 0L32 3h10L26 29z" />
+        </svg>
+        <h1>SLIPSTREAM</h1>
+      </div>
+      <span class="division"></span
+      ><span class="product">Driving simulator</span>
+      <button id="choose-course" class="course-button" aria-haspopup="dialog"><svg><use href="#pin" /></svg> Courses</button>
+      <div class="status">
+        <span class="live"><i></i>System online</span
+        ><span class="division"></span
+        ><span class="perf"
+          ><svg><use href="#signal" /></svg><b id="fps">–</b> FPS</span
+        >
+      </div>
+    </header>
+    <main id="viewport" aria-label="Slipstream driving simulation">
+      <canvas
+        id="world"
+        tabindex="0"
+        aria-label="3D driving environment. Use WASD or the arrow keys to drive."
+      ></canvas>
+      <div class="vignette"></div>
+      <div class="location">
+        <div class="eyebrow">
+          <svg><use href="#pin" /></svg><span id="course-type">Free drive</span>
+        </div>
+        <h2 id="course-name">Redrock Basin</h2>
+        <div class="accent"></div>
+        <div class="vehicle-strip">
+          <button data-control="previous" aria-label="Previous vehicle">
+            ‹
+          </button>
+          <div>
+            <span id="vehicle-name" aria-live="polite"></span
+            ><small id="vehicle-plate"></small>
+          </div>
+          <button data-control="next" aria-label="Next vehicle">›</button>
+        </div>
+        <div id="race-info" hidden>
+          <span id="race-progress"></span>
+          <button id="race-action" class="action-button">Start race</button>
+        </div>
+      </div>
+      <div id="launch-signal" role="status" hidden>
+        <div class="lights" aria-hidden="true"><i></i><i></i><i></i></div>
+        <strong></strong><small></small>
+      </div>
+      <button class="camera" data-control="camera" aria-label="Change camera">
+        <svg><use href="#cam" /></svg><span id="camera">Chase</span><kbd>C</kbd>
+      </button>
+      <aside class="minimap" aria-label="Course minimap">
+        <div class="map-caption"><span>Course map</span><span>N ↑</span></div>
+        <svg
+          id="minimap"
+          role="img"
+          aria-label="Redrock Basin road loop and current vehicle position"
+        ></svg>
+      </aside>
+      <section class="telemetry" aria-label="Input telemetry">
+        <div class="panel-title"><i></i>Input telemetry</div>
+        <div class="meter">
+          <span>Throttle</span>
+          <div class="segments" id="throttle"></div>
+        </div>
+        <div class="meter">
+          <span>Brake</span>
+          <div class="segments" id="brake"></div>
+        </div>
+        <div class="meter">
+          <span>Steer</span>
+          <div class="steering-readout">
+            <span>L</span>
+            <div class="steering-track"><i id="steering"></i></div>
+            <span>R</span>
+          </div>
+        </div>
+      </section>
+      <section class="cluster" aria-label="Vehicle instruments">
+        <div class="speed-row">
+          <div class="speed-group">
+            <strong id="speed" aria-label="Speed in kilometres per hour"
+              ><span>00</span>0</strong
+            ><small>km/h</small>
+          </div>
+          <div class="gear-group"><b id="gear">N</b><small>Gear</small></div>
+        </div>
+        <div class="revbar" aria-hidden="true"></div>
+      </section>
+      <div class="flight-controls" hidden>
+        <button data-control="rise"><kbd>E</kbd> Rise</button
+        ><button data-control="lower"><kbd>Q</kbd> Lower</button
+        ><span id="altitude"></span>
+      </div>
+      <div class="failure" role="alert" hidden></div>
+    </main>
+    <footer>
+      <div class="legend">
+        <svg><use href="#keys" /></svg>Controls
+      </div>
+      <div class="bindings">
+        <button data-control="forward" title="W or up arrow">
+          <kbd>W</kbd><span>Accelerate</span>
+        </button>
+        <button data-control="back" title="S or down arrow">
+          <kbd>S</kbd><span>Brake / Reverse</span>
+        </button>
+        <div class="steer">
+          <button
+            data-control="left"
+            aria-label="Steer left"
+            title="A or left arrow"
+          >
+            <kbd>A</kbd></button
+          ><button
+            data-control="right"
+            aria-label="Steer right"
+            title="D or right arrow"
+          >
+            <kbd>D</kbd></button
+          ><span>Steer</span>
+        </div>
+        <button data-control="handbrake">
+          <kbd>Space</kbd><span>Handbrake</span>
+        </button>
+        <button data-control="reset"><kbd>R</kbd><span>Reset</span></button>
+        <button data-control="camera"><kbd>C</kbd><span>Camera</span></button>
+        <button data-control="next" title="Scroll to change vehicle">
+          <kbd>SCROLL</kbd><span>Vehicle</span>
+        </button>
+      </div>
+    </footer>
+    <dialog id="course-dialog" aria-labelledby="course-title">
+      <form id="course-form">
+        <div class="dialog-heading"><h2 id="course-title">Choose a course</h2><button type="button" class="close" aria-label="Close course selection">×</button></div>
+        <div class="course-list"></div>
+        <fieldset id="strip-settings" hidden>
+          <legend>Strip setup</legend>
+          <label>Distance (m)<input id="strip-length" type="number" min="50" max="2000" step="1" value="402" required></label>
+          <label>Drive surface<select id="strip-surface"></select></label>
+        </fieldset>
+        <button type="submit" class="primary-button">Enter course <span aria-hidden="true">→</span></button>
+      </form>
+    </dialog>
+    <dialog id="result-dialog" aria-labelledby="result-title">
+      <div class="dialog-heading"><h2 id="result-title">Race results</h2><button class="close" aria-label="Close results">×</button></div>
+      <p id="result-course"></p>
+      <div class="result-time"><span>Total time</span><strong id="result-time"></strong></div>
+      <dl id="result-stats"></dl>
+      <div class="result-actions"><button id="result-retry" class="primary-button">Race again</button><button id="result-courses" class="secondary-button">Courses</button></div>
+    </dialog>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
