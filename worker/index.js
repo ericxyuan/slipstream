@@ -202,7 +202,13 @@ export class Party {
                 "#74dab5",
                 "#bc9dfb",
                 "#ec96c1",
-              ][this.players.size % 6],
+                "#9ec3ff",
+                "#e29b58",
+                "#d7ed82",
+                "#72ebec",
+                "#ebb2ff",
+                "#a0adba",
+              ][this.players.size % 12],
             };
             this.players.set(p.id, p);
             if (!this.host) {

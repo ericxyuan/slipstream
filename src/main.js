@@ -67,7 +67,8 @@ function start() {
     localBeforeSky,
     lastGate,
     clock = 0;
-  let remote = null,
+  let pendingVehicle,
+    remote = null,
     ended = false,
     soloConfig = { ...defaults };
   const fleet = new Fleet(scene, (spec) => {
@@ -99,14 +100,27 @@ function start() {
       party.state?.active
     )
       return false;
-    if (party.id) party.send({ type: "vehicle", vehicle: id });
-    else fleet.select(vehicles.findIndex((v) => v.id === id));
+    if (party.id) {
+      pendingVehicle = id;
+      party.send({ type: "vehicle", vehicle: id });
+    } else fleet.select(vehicles.findIndex((v) => v.id === id));
     audio.tone(340);
     return true;
   }
   function cycle(d) {
-    const i = fleet.rotation.indexOf(vehicles[fleet.index].id);
-    select(fleet.rotation[(i + d + 3) % 3]);
+    const ids = fleet.rotation.filter((id) =>
+      eligible(
+        vehicles.find((v) => v.id === id),
+        course.config,
+      ),
+    );
+    if (!ids.length) return;
+    const i = ids.indexOf(vehicles[fleet.index].id);
+    select(
+      ids[
+        i < 0 ? (d > 0 ? 0 : ids.length - 1) : (i + d + ids.length) % ids.length
+      ],
+    );
   }
   function clear() {
     input.clear();
@@ -225,6 +239,12 @@ function start() {
       physics.vz = self.vz;
       physics.hoverTarget = self.state.altitude;
     }
+    if (self.vehicle === pendingVehicle) {
+      try {
+        localStorage.setItem("slipstream.vehicle", pendingVehicle);
+      } catch {}
+      pendingVehicle = undefined;
+    }
     remote = self;
     Object.assign(race, self.result);
     for (const [i, x, z, tilt] of m.propChanges ?? [])
@@ -232,28 +252,36 @@ function start() {
     hud.map.players = m.players.filter((p) => p !== self);
     const el = document.getElementById("party-hud");
     el.hidden = false;
-    el.textContent =
-      "PARTY · " +
-      m.code +
-      "\n" +
-      m.players
-        .map(
-          (p) =>
-            p.name +
-            " · " +
-            (p.ping == null ? "—" : p.ping + " ms") +
-            (p === self
-              ? " · You"
-              : " · " +
-                Math.round(
-                  Math.hypot(
-                    p.state.x - self.state.x,
-                    p.state.z - self.state.z,
-                  ),
-                ) +
-                " m"),
-        )
-        .join("\n");
+    const rosterKey = m.code + ":" + m.players.map((p) => p.id).join(",");
+    if (
+      el.dataset.roster !== rosterKey ||
+      el.children.length !== m.players.length + 1
+    ) {
+      const heading = document.createElement("b");
+      heading.textContent = "PARTY · " + m.code;
+      el.replaceChildren(
+        heading,
+        ...m.players.map((p) => {
+          const row = document.createElement("div");
+          const dot = document.createElement("i");
+          dot.style.backgroundColor = p.color;
+          row.append(dot, document.createElement("span"));
+          return row;
+        }),
+      );
+      el.dataset.roster = rosterKey;
+    }
+    m.players.forEach((p, i) => {
+      const distance = Math.round(
+        Math.hypot(p.state.x - self.state.x, p.state.z - self.state.z),
+      );
+      el.children[i + 1].lastChild.textContent =
+        p.name +
+        " · " +
+        (p.ping == null ? "—" : p.ping + " ms") +
+        " · " +
+        (p === self ? "You" : distance + " m");
+    });
     ui.partyUpdate(m);
     if (m.active && m.players.every((p) => terminal(p.result.phase))) {
       if (!ended || ui.results.open) ui.finish();

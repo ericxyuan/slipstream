@@ -237,6 +237,8 @@ export class DriveAudio {
     }
   }
   mute(on) {
+    if (this.muted === on) return;
+    this.muted = on;
     if (this.ctx)
       this.master.gain.setTargetAtTime(
         on ? 0 : (this.volumes.master ?? 0.45),

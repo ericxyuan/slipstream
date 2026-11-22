@@ -1467,3 +1467,15 @@ dialog::backdrop {
 #menu-pane fieldset[hidden] {
   display: none;
 }
+#party-hud div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+}
+#party-hud i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
