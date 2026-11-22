@@ -42,7 +42,7 @@
       </div>
       <span class="division"></span
       ><span class="product">Driving simulator</span>
-      <button id="choose-course" class="course-button" aria-haspopup="dialog"><svg><use href="#pin" /></svg> Courses</button>
+      <button id="choose-course" class="course-button" aria-haspopup="dialog"><svg><use href="#pin" /></svg> Menu <kbd>X</kbd></button>
       <div class="status">
         <span class="live"><i></i>System online</span
         ><span class="division"></span
@@ -74,6 +74,7 @@
           </div>
           <button data-control="next" aria-label="Next vehicle">›</button>
         </div>
+        <div id="party-hud" hidden></div>
         <div id="race-info" hidden>
           <span id="race-progress"></span>
           <button id="race-action" class="action-button">Start race</button>
@@ -104,6 +105,7 @@
           <span>Brake</span>
           <div class="segments" id="brake"></div>
         </div>
+        <div class="meter"><span>Boost</span><meter id="boost-level" max="1" value="0"></meter></div><div class="meter"><span>Regen</span><meter id="regen-level" max="4" value="0"></meter></div><div class="meter"><span>Handbrake</span><meter id="hand-level" max="1" value="0"></meter></div>
         <div class="meter">
           <span>Steer</span>
           <div class="steering-readout">
@@ -113,6 +115,7 @@
           </div>
         </div>
       </section>
+      <section class="accel-panel"><div class="panel-title">Acceleration</div><small>Longitudinal</small><output id="long-accel"></output><small>Vertical</small><output id="vert-accel"></output></section>
       <section class="cluster" aria-label="Vehicle instruments">
         <div class="speed-row">
           <div class="speed-group">
@@ -122,7 +125,7 @@
           </div>
           <div class="gear-group"><b id="gear">N</b><small>Gear</small></div>
         </div>
-        <div class="revbar" aria-hidden="true"></div>
+        <div id="motion-info"></div><div class="revbar" aria-hidden="true"></div>
       </section>
       <div class="flight-controls" hidden>
         <button data-control="rise"><kbd>E</kbd> Rise</button
@@ -160,7 +163,7 @@
         <button data-control="handbrake">
           <kbd>Space</kbd><span>Handbrake</span>
         </button>
-        <button data-control="reset"><kbd>R</kbd><span>Reset</span></button>
+        <button data-control="boost"><kbd>Shift</kbd><span>Boost</span></button><button data-control="jump"><kbd>J</kbd><span>Jump</span></button><button data-control="reset"><kbd>R</kbd><span>Reset</span></button>
         <button data-control="camera"><kbd>C</kbd><span>Camera</span></button>
         <button data-control="next" title="Scroll to change vehicle">
           <kbd>SCROLL</kbd><span>Vehicle</span>
@@ -168,16 +171,8 @@
       </div>
     </footer>
     <dialog id="course-dialog" aria-labelledby="course-title">
-      <form id="course-form">
-        <div class="dialog-heading"><h2 id="course-title">Choose a course</h2><button type="button" class="close" aria-label="Close course selection">×</button></div>
-        <div class="course-list"></div>
-        <fieldset id="strip-settings" hidden>
-          <legend>Strip setup</legend>
-          <label>Distance (m)<input id="strip-length" type="number" min="50" max="2000" step="1" value="402" required></label>
-          <label>Drive surface<select id="strip-surface"></select></label>
-        </fieldset>
-        <button type="submit" class="primary-button">Enter course <span aria-hidden="true">→</span></button>
-      </form>
+      <div class="dialog-heading"><h2 id="course-title">Drive</h2><button class="close" aria-label="Close menu">×</button></div>
+      <div class="menu-layout"><nav id="menu-tabs" aria-label="Main menu"></nav><section id="menu-pane"></section></div><p id="menu-status" role="status"></p>
     </dialog>
     <dialog id="result-dialog" aria-labelledby="result-title">
       <div class="dialog-heading"><h2 id="result-title">Race results</h2><button class="close" aria-label="Close results">×</button></div>

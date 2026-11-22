@@ -1,0 +1,10 @@
+{
+  "name": "slipstream",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-11-15",
+  "workers_dev": true,
+  "assets": {"directory":"./dist","binding":"ASSETS","not_found_handling":"single-page-application","run_worker_first":["/api/*"]},
+  "durable_objects": {"bindings":[{"name":"PARTIES","class_name":"Party"}]},
+  "migrations": [{"tag":"v1","new_sqlite_classes":["Party"]}],
+  "observability":{"enabled":true}
+}

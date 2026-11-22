@@ -1,4 +1,4 @@
-import { vehicles, rememberVehicle, restoreVehicle } from "./catalog.js";
+import { vehicles, rememberVehicle, restoreVehicle, restoreRotation } from "./catalog.js";
 import { createCar } from "./model.js";
 import { buildVariant } from "./variants.js";
 import { GasExhaust } from "./exhaust.js";
@@ -9,6 +9,7 @@ export class Fleet {
     this.scene = scene;
     this.onChange = onChange;
     this.models = new Map();
+    this.rotation=restoreRotation();
     this.index = restoreVehicle();
     this.select(this.index, false).level = 1;
   }
@@ -27,7 +28,8 @@ export class Fleet {
     return this.models.get(index);
   }
   cycle(direction) {
-    this.select((this.index + direction + vehicles.length) % vehicles.length);
+    const i=this.rotation.indexOf(vehicles[this.index].id);
+    this.select(vehicles.findIndex(v=>v.id===this.rotation[(i+direction+3)%3]));
   }
   update(dt, state, roll, braking) {
     this.exhaust?.update(

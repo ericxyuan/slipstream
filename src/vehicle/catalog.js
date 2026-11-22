@@ -129,6 +129,36 @@ export const vehicles = [
     flying: true,
   },
 ];
+vehicles.push(
+  {id:"u9",name:"Yangwang U9 Xtreme · Dawn Moment",plate:"U9X",color:"#c5a25a",paint:"#17181b",jump:true,width:2.03,length:4.97,height:1.29,bonnet:[1.18,-.76],wheelbase:2.9,
+    handling:{...vehicles[1].handling,steerResponse:11,cornering:13.4,grip:15,braking:14.1,pedalTime:.3}},
+  {id:"i8",name:"BMW i8 Coupé",plate:"BMW-I8",color:"#72c9ef",paint:"#a7b8c4",hybrid:true,width:1.94,length:4.69,height:1.29,bonnet:[1.16,-.76],wheelbase:2.8,
+    handling:{...vehicles[1].handling,steerResponse:8.3,cornering:9.1,grip:10.4,braking:10.4}}
+);
+const performanceData=[
+  [1550,265,3.1,"AWD rally"],[1350,345,2.1,"RWD sports"],[9000,205,4.2,"Schoolbus"],[15000,230,4,"Heavy tractor"],
+  [1900,375,.59,"Cold-gas Rocket · <0.59 s to 60 mph reference · estimated game mass"],
+  [2480,503.17,1.9,"Four motors · 2,220 kW · 3,019 PS · 1,200 V · estimated game launch"],
+  [1535,250,4.4,"Plug-in hybrid AWD · 275 kW · 374 PS"]
+];
+vehicles.forEach((v,i)=>{
+  const [mass,top,seconds,description]=performanceData[i];
+  Object.assign(v,{mass,top,seconds,description,electric:i>=4,pack:i>=4?"Electric Set":"SlipStream Set",
+    batteryKWh:({roadster:120,u9:80,i8:11.6})[v.id]??0});
+  const h=v.handling, goal=v.flying?26.8224:100/3.6;
+  h.limit=top/3.6;
+  if(v.flying) h.pedalTime=.16;
+  // Integrate the same torque taper used by the simulation to calibrate the launch.
+  let integral=0;
+  for(let j=0;j<100;j++) integral+=goal/100/(1-((j+.5)*goal/100/h.limit)**2);
+  h.launch=integral/(seconds-h.pedalTime*.5);
+});
+export function restoreRotation() {
+  try {const ids=JSON.parse(localStorage.getItem("slipstream.rotation"));
+    if(Array.isArray(ids)&&ids.length===3&&new Set(ids).size===3&&ids.every(id=>vehicles.some(v=>v.id===id)))return ids;
+  } catch {}
+  return ["rally","sport","roadster"];
+}
 export const storageKey = "slipstream.vehicle";
 export function restoreVehicle() {
   try {

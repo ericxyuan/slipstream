@@ -54,7 +54,7 @@ test("ground steering, including on the drag strip, emits no side gas", () => {
   car.setCourse({ id: "drag" }, []);
   const exhaust = new GasExhaust(new Scene());
   for (let i = 0; i < 120; i++) {
-    car.step({ left: true, rise: true, forward: true });
+    car.step({ left: true, forward: true });
     exhaust.update(true, car.state, STEP);
   }
   assert.equal(car.state.sideThrust, 0);

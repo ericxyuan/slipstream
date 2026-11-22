@@ -1,11 +1,7 @@
 import { road } from "./road.js";
 
-export const surfaces = {
-  prepared: { name: "Prepared asphalt", traction: 11.8, grip: 1, color: "#45454a" },
-  wet: { name: "Wet asphalt", traction: 5.5, grip: 0.66, color: "#344353" },
-  gravel: { name: "Loose gravel", traction: 3.4, grip: 0.46, color: "#aa9174" },
-  ice: { name: "Packed ice", traction: 1.45, grip: 0.23, color: "#acc7d4" },
-};
+import { surfaces } from "./surfaces.js";
+export { surfaces };
 export const courses = {
   desert: { name: "Redrock Basin", type: "Free drive", detail: "Explore the desert test loop." },
   drag: { name: "Meridian Strip", type: "Drag strip", detail: "Set the distance and surface." },

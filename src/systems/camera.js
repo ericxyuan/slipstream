@@ -13,7 +13,7 @@ export class CameraRig {
   constructor(obstacles) {
     this.camera = new T.PerspectiveCamera(54, 1, 0.065, 1500);
     this.obstacles = obstacles;
-    this.index = 0;
+    this.index = 0; this.yaw=0;this.elevation=0;
     this.aim = new T.Vector3();
     this.pos = new T.Vector3();
     this.target = new T.Vector3();
@@ -23,7 +23,15 @@ export class CameraRig {
   configure(spec) {
     this.spec = spec;
   }
+  bind(canvas){
+    let active;
+    canvas.addEventListener("pointerdown",e=>{if(e.button!==0)return;active=e.pointerId;canvas.setPointerCapture(active);});
+    canvas.addEventListener("pointermove",e=>{if(e.pointerId!==active)return;
+      this.yaw-=e.movementX*.006;this.elevation=Math.max(-.45,Math.min(1.15,this.elevation+e.movementY*.005));});
+    canvas.addEventListener("lostpointercapture",()=>{active=undefined;});
+  }
   cycle() {
+    if(this.yaw||this.elevation){this.yaw=0;this.elevation=0;return modes[this.index].name;}
     this.index = (this.index + 1) % modes.length;
     return modes[this.index].name;
   }
@@ -53,6 +61,8 @@ export class CameraRig {
       this.target.y += (this.spec.height - 1.28) * 0.78;
     }
     if (aspect < 1 && !inside) this.pos.z += 2;
+    if(inside){this.target.y+=this.elevation*15;this.target.applyAxisAngle(this.up,this.yaw);}
+    else if(this.yaw||this.elevation){this.pos.applyAxisAngle(this.up,this.yaw);this.pos.y=Math.max(.5,this.pos.y+this.elevation*Math.abs(mode.offset[2]));this.target.applyAxisAngle(this.up,this.yaw);}
     this.pos.applyAxisAngle(this.up, s.heading).add(this.anchor);
     this.target.applyAxisAngle(this.up, s.heading).add(this.anchor);
     const k = snap || inside ? 1 : 1 - Math.exp(-dt * 8);

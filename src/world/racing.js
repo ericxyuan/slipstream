@@ -1,5 +1,6 @@
 import * as T from "three";
 import { batchStatic, box, paint, randomSource, solid } from "./geometry.js";
+import { streetsX, streetsZ, roadWidth, cityBuildings, cityBlocks } from "./city.js";
 import { cityCorners } from "./courses.js";
 import { grainTexture } from "./road.js";
 
@@ -34,6 +35,7 @@ function checkeredLine(group, z, width) {
 
 export function buildStrip(group, course) {
   const { length, surface } = course;
+  const width=course.stripWidth??20, edge=width/2;
   const texture = grainTexture(218, 30, 42);
   texture.repeat.set(5, (length + 130) / 5);
   const strip = paint(surface.color, { map: texture, roughness: surface.grip < 0.75 ? 0.5 : 0.92 });
@@ -41,27 +43,28 @@ export function buildStrip(group, course) {
   const steel = paint("#44515b"), tires = paint("#252b2d");
   const depth = length + 130, mid = 25 - depth / 2;
   box(group, paint("#b2a489"), 0, -0.55, mid, 1400, 1, depth + 1000);
-  box(group, strip, 0, -0.04, mid, 22, 0.12, depth);
+  box(group, strip, 0, -0.04, mid, width+2, 0.12, depth);
   for (const side of [-1, 1]) {
-    box(group, white, side * 9.6, 0.034, mid, 0.15, 0.015, depth);
-    box(group, concrete, side * 11.1, 0.48, mid, 0.65, 1, depth);
+    box(group, white, side * (edge-.3), 0.034, mid, 0.15, 0.015, depth);
+    box(group, concrete, side * (edge+1.1), 0.48, mid, 0.65, 1, depth);
     for (let d = 0; d <= length + 80; d += 16)
-      box(group, orange, side * 10.75, 0.52, -d, 0.09, 0.45, 3.2);
+      box(group, orange, side * (edge+.75), 0.52, -d, 0.09, 0.45, 3.2);
     for (let d = 4; d < length; d += 75) {
-      box(group, steel, side * 15, 5, -d, 0.22, 10, 0.22);
-      box(group, white, side * 14.3, 10, -d, 1.8, 0.25, 0.6);
+      box(group, steel, side * (edge+5), 5, -d, 0.22, 10, 0.22);
+      box(group, white, side * (edge+4.3), 10, -d, 1.8, 0.25, 0.6);
     }
     for (let row = 0; row < 5; row++)
-      box(group, row % 2 ? steel : concrete, side * (20 + row * 1.5), 0.35 + row * 0.6,
+      box(group, row % 2 ? steel : concrete, side * (edge+10 + row * 1.5), 0.35 + row * 0.6,
         -13, 1.7, 0.6 + row * 0.48, 52);
   }
-  box(group, white, 0, 0.034, 0, 20, 0.02, 0.32);
-  checkeredLine(group, -length, 20);
-  for (const side of [-1, 1]) box(group, steel, side * 11.6, 4.4, -length, 0.8, 8.8, 1);
-  box(group, tires, 0, 8.1, -length, 24, 1.8, 1);
+  box(group, white, 0, 0.034, 0, width, 0.02, 0.32);
+  for(let i=1;i<(course.lanes??1);i++) for(let d=2;d<length;d+=9) box(group,white,(i-(course.lanes/2))*4.5,.034,-d,.13,.015,4);
+  checkeredLine(group, -length, width);
+  for (const side of [-1, 1]) box(group, steel, side * (edge+1.6), 4.4, -length, 0.8, 8.8, 1);
+  box(group, tires, 0, 8.1, -length, width+4, 1.8, 1);
   sign(group, "FINISH", 0, 8.12, -length + 0.52, 10, 1.6);
   for (let d = 100; d < length; d += 100)
-    sign(group, d + " m", 10.9, 1.65, -d, 3.6, 1, "#ffbf76");
+    sign(group, d + " m", edge+.9, 1.65, -d, 3.6, 1, "#ffbf76");
   batchStatic(group);
   return [];
 }
@@ -82,39 +85,60 @@ function facade(seed) {
   return paint("#ffffff", { map });
 }
 
-export function buildCity(group) {
-  const obstacles = [], rand = randomSource(781), facades = [1, 2, 3, 4].map(facade);
-  const curb = paint("#b6b6b2"), roof = paint("#444d54"), paintLine = paint("#e6e0be");
-  const glazing = paint("#3d5362", { metalness: 0.25, roughness: 0.42 });
-  const awnings = ["#8b4640", "#387063", "#c3944c"].map(c => paint(c));
-  const mint = luminous("#53f3d1"), steel = paint("#3e4952");
-  box(group, paint("#494f56"), 50, -0.51, -20, 1100, 1, 1100);
-  const xs = [-160, -80, 0, 60, 120, 200, 280], zs = [-280, -200, -120, -60, 0, 80, 160, 240];
-  for (let i = 1; i < xs.length; i++) for (let j = 1; j < zs.length; j++) {
-    const x = (xs[i] + xs[i - 1]) / 2, z = (zs[j] + zs[j - 1]) / 2;
-    const w = xs[i] - xs[i - 1] - 18, d = zs[j] - zs[j - 1] - 18;
-    box(group, curb, x, 0.09, z, w, 0.24, d);
-    for (const side of [-1, 1]) {
-      const bx = x + side * w / 4, h = 11 + rand() ** 1.5 * 53, bw = w / 2 - 4, bd = d - 7;
-      box(group, facades[Math.floor(rand() * 4)], bx, h / 2, z, bw, h, bd);
-      box(group, roof, bx, h + 0.22, z, bw + 0.4, 0.55, bd + 0.4);
-      box(group, roof, bx, h + 1.3, z, bw * 0.55, 2.5, bd * 0.5);
-      const frontage = side * (bw / 2 + 0.06) + bx;
-      box(group, glazing, frontage, 1.55, z, 0.2, 2.9, bd - 1);
-      box(group, awnings[(i + j) % 3], frontage, 3.25, z, 1.4, 0.32, bd - 1);
-      for (let offset = -bd / 2 + 2; offset < bd / 2; offset += 4)
-        box(group, roof, frontage + side * 0.13, 1.5, z + offset, 0.22, 3, 0.16);
-      obstacles.push({ x: bx, z, rx: bw / 2, rz: bd / 2, height: h, rectangle: true });
+export function buildCity(group,course) {
+  const obstacles=cityBuildings(), facades=[1,2,3,4].map(facade);
+  const curb=paint("#b7b1a6"), roof=paint("#414a50"), line=paint("#eae2cd"), amber=paint("#d4ac66");
+  const brick=paint("#935e49"), concrete=paint("#c9bfab"), foliage=paint("#557353"), bark=paint("#746552");
+  const steel=paint("#465260"), grass=paint("#809067"), mint=luminous("#72e5c5");
+  const roadMat=paint(course?.surface?.color??"#50555b");
+  box(group,roadMat,50,-.51,-20,1100,1,1100);
+  for(const b of cityBlocks()){
+    const {x,z,w,d,district}=b;
+    box(group,district==="park"?grass:curb,x,.07,z,w,.18,d);
+    if(district==="park") {
+      box(group,curb,x,.18,z,w, .12, 2.5);
+      for(const side of [-1,1])for(const k of [-1,0,1]){
+        const tx=x+k*w*.31,tz=z+side*d*.28;
+        box(group,bark,tx,1.45,tz,.55,2.9,.55);
+        solid(group,new T.IcosahedronGeometry(3.1,0),foliage,tx,4,tz);
+      }
     }
   }
-  for (const x of xs) for (const z of zs) {
-    // Crosswalks sit across both approaches, just outside each junction.
-    for (let i = -6; i <= 6; i += 2) {
-      box(group, paintLine, x + i, 0.012, z - 9.5, 0.7, 0.015, 2);
-      box(group, paintLine, x + 9.5, 0.012, z + i, 2, 0.015, 0.7);
+  for(const [i,o] of obstacles.entries()){
+    const {x,z,rx,rz,height:h,district:k}=o,w=rx*2,d=rz*2;
+    const wall=k==="downtown"?facades[i%4]:k==="residential"?brick:k==="freight"?steel:concrete;
+    box(group,wall,x,h/2,z,w,h,d);
+    if(k==="downtown"){
+      box(group,facades[(i+1)%4],x,h+3,z,w*.77,6,d*.8);
+      box(group,steel,x,h+7,z,1,5,1);
+    }else if(k==="residential"){
+      const gable=solid(group,new T.ConeGeometry(1,1,4),roof,x,h+1.25,z);
+      gable.rotation.y=Math.PI/4;gable.scale.set(w*.76,2.9,d*.74);
+      for(const side of [-1,1])for(const n of [-1,0,1])
+        box(group,steel,x+n*w*.28,h*.56,z+side*(rz+.04),1.7,1.5,.12);
+    }else if(k==="civic"){
+      for(let n=-2;n<=2;n++)solid(group,new T.CylinderGeometry(.75,.9,h*.75,10),concrete,x+n*w*.19,h*.375,z+rz+1);
+      box(group,concrete,x,h*.82,z+rz,w+2,1.3,5);sign(group,"CITY HALL",x,h*.82,z+rz+2.52,9,1.05);
+    }else if(k==="retail"){
+      box(group,facades[0],x,h*.38,z+rz,w-.6,h*.56,.2);
+      const awning=box(group,i%2?brick:foliage,x,3.2,z+rz+.65,w, .24,1.7);awning.rotation.x=.14;
+      sign(group,["MARKET","COFFEE","FOUNDRY STORES"][i%3],x,h*.76,z+rz+.12,w*.75,1.5);
+    }else{
+      for(let n=-1;n<=1;n++)box(group,roof,x+n*w*.28,2.2,z+rz+.1,w*.19,4.3,.18);
+      if(k==="industrial")for(const side of [-1,1])solid(group,new T.CylinderGeometry(.83,1.45,11,12),brick,x+side*w*.3,h+4,z);
+      else for(const side of [-1,1])box(group,side===1?brick:foliage,x+side*w*.31,1.35,z+rz+4,5.5,2.7,2.3);
     }
-    box(group, steel, x + 10, 3.4, z + 10, 0.22, 6.8, 0.22);
-    box(group, paintLine, x + 9.1, 6.8, z + 10, 2, 0.25, 0.5);
+  }
+  for(const [axis,positions,cross] of [["x",streetsX,streetsZ],["z",streetsZ,streetsX]]){
+    for(const p of positions)for(let i=1;i<cross.length;i++){
+      const width=roadWidth(axis,p),a=cross[i-1]+roadWidth(axis==="x"?"z":"x",cross[i-1])/2,b=cross[i]-roadWidth(axis==="x"?"z":"x",cross[i])/2;
+      function stripe(mat,off,at,w,d){box(group,mat,axis==="x"?p+off:at,.022,axis==="x"?at:p+off,axis==="x"?w:d,.018,axis==="x"?d:w);}
+      stripe(amber,0,(a+b)/2,.17,b-a);
+      if(width>=24)for(const side of [-1,1])for(let at=a+4;at<b-2;at+=9)stripe(line,side*width*.24,at,.12,3);
+      for(const end of [a+1.3,b-1.3])for(let off=-width/2+1;off<width/2;off+=1.7)stripe(line,off,end,.64,2);
+      const lx=axis==="x"?p+width/2+1:(a+b)/2,lz=axis==="x"?(a+b)/2:p+width/2+1;
+      box(group,steel,lx,3.2,lz,.18,6.4,.18);box(group,line,lx-.7,6.4,lz,1.6,.22,.4);
+    }
   }
   // Painted chevrons trace the racing line and point around each junction.
   cityCorners.forEach(([x, z], i) => {
@@ -164,15 +188,15 @@ export function buildSky(group, course) {
   }
   box(group, rim, 0, -0.6, 7, 16, 1.2, 40);
   for (const x of [-7.5, 7.5]) box(group, light, x, 0.05, 7, 0.25, 0.1, 40);
-  course.gates.forEach((g, i) => {
+  (course.gates.length?course.gates:course.network?.slice(1)??[]).forEach((g, i) => {
     const portal = new T.Group();
     portal.position.set(g.x, g.y, g.z);
-    portal.rotation.y = Math.atan2(-g.dx, -g.dz);
+    portal.rotation.y = Math.atan2(-(g.dx??0), -(g.dz??-1));
     group.add(portal);
-    solid(portal, new T.TorusGeometry(g.radius + 0.48, 0.45, 8, 64), rim);
-    solid(portal, new T.TorusGeometry(g.radius + 0.12, 0.13, 8, 64), light, 0, 0, 0.27);
+    solid(portal, new T.TorusGeometry((g.radius??5.5) + 0.48, 0.45, 8, 64), rim);
+    solid(portal, new T.TorusGeometry((g.radius??5.5) + 0.12, 0.13, 8, 64), light, 0, 0, 0.27);
     sign(portal, i === course.gates.length - 1 ? "FINISH" : String(i + 1).padStart(2, "0"),
-      0, g.radius + 1.2, 0.1, 3.8, 1);
+      0, (g.radius??5.5) + 1.2, 0.1, 3.8, 1);
   });
   batchStatic(group);
   return [];

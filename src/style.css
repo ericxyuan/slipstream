@@ -926,3 +926,40 @@ dialog::backdrop { background: #10161bb5; }
   #race-info { margin-top: 3px; padding: 4px 7px; }
   .location:has(#race-info:not([hidden])) ~ .telemetry { display: none; }
 }
+/* Driving instruments share a horizon along the lower edge. */
+header{order:0} footer{order:1;height:42px;min-height:36px;border-block:0;border-bottom:1px solid #ffffff1d} main{order:2;min-height:0}
+:root{--panel:rgba(18,24,29,.23)}
+.telemetry,.accel-panel,.minimap,.vehicle-strip,#party-hud,#race-info,.camera,.flight-controls{background:var(--panel);backdrop-filter:blur(6px);text-shadow:0 1px 4px #13171b}
+.minimap{top:auto;bottom:var(--edge);width:clamp(110px,12vw,176px)}
+#minimap{height:clamp(94px,10vw,150px)}
+.cluster{right:calc(var(--edge) + clamp(110px,12vw,176px) + 20px);bottom:var(--edge);min-width:128px}
+.cluster strong{font-size:clamp(54px,5.5vw,90px)}
+.telemetry,.location:has(#race-info:not([hidden])) ~ .telemetry{display:block;bottom:var(--edge);width:156px;padding:12px}
+.meter+.meter{margin-top:4px}.panel-title{margin-bottom:9px}
+.accel-panel{position:absolute;bottom:var(--edge);left:calc(var(--edge) + 166px);padding:12px;border:1px solid #ffffff32;border-radius:5px}
+.accel-panel small,.accel-panel output{display:block}.accel-panel small{font-size:10px;color:#ddd}.accel-panel output,#motion-info{font:10px var(--mono);margin:3px 0 7px}
+#motion-info{text-align:right;color:#fff}.boosting{color:#a5eeff}
+meter{width:62px;height:9px;accent-color:var(--accent)}#boost-level{accent-color:#62dafa}#regen-level{accent-color:#76edbc}
+.flight-controls{left:auto;right:var(--edge);top:74px;bottom:auto;transform:none}
+#party-hud{white-space:pre-line;padding:7px;font:11px var(--mono);margin-top:7px}
+dialog{background:rgba(17,25,32,.24);color:white;backdrop-filter:blur(21px) brightness(.64);border:1px solid #ffffff44}
+dialog::backdrop{background:#0b172332}
+#course-dialog{width:min(780px,94vw);max-height:85dvh}
+.menu-layout{display:grid;grid-template-columns:160px 1fr;gap:20px}
+#menu-tabs{display:flex;flex-direction:column;gap:2px}
+#menu-tabs button{text-align:left;border:0;background:transparent;color:#e3e9e9;padding:6px 9px;cursor:pointer}
+#menu-tabs button.selected{border-left:2px solid var(--accent);background:#ffffff18;color:white}
+#menu-pane{max-height:57dvh;overflow:auto;padding:1px 6px 5px 2px}
+#menu-pane h3{font-size:23px;margin:7px 0}#menu-pane p,#result-stats dd{line-height:1.45}
+#menu-pane fieldset{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;border:1px solid #ffffff34;margin:0 0 11px;border-radius:5px;padding:10px}
+#menu-pane legend{font-size:11px;letter-spacing:.09em;text-transform:uppercase}
+#menu-pane label{display:block;font-size:12px;margin:4px 0}
+#menu-pane input:not([type=checkbox]),#menu-pane select{display:block;width:100%;margin-top:3px;border:1px solid #ffffff45;border-radius:4px;padding:6px;color:#fff;background:#1d2630b8}
+#menu-pane option{background:#222}.form-actions{display:flex;flex-wrap:wrap;gap:6px}
+#menu-pane .secondary-button{margin:4px}#menu-status{color:#ffe2aa;min-height:1em}
+#garage-model{display:block;width:100%;height:160px;touch-action:none;background:radial-gradient(ellipse at bottom,#bccee029,transparent 70%)}
+#route-preview svg{display:block;width:100%;height:72px;color:var(--accent);fill:#fff}
+#menu-pane dl{display:grid;grid-template-columns:auto 1fr;gap:7px}#menu-pane dd{margin:0}
+#result-dialog{max-height:83dvh;overflow:auto}#result-stats{display:block}
+@media(max-width:860px){.accel-panel{left:var(--edge);bottom:calc(var(--edge) + 138px);padding:6px 9px}.accel-panel .panel-title{display:none}.flight-controls{top:50px}footer .legend{display:none}.bindings{overflow-x:auto;justify-content:flex-start}.cluster{right:calc(var(--edge) + 118px);min-width:82px}.cluster strong{font-size:54px}}
+@media(max-width:600px){.telemetry,.location:has(#race-info:not([hidden])) ~ .telemetry{width:115px;padding:7px}.minimap{width:84px}#minimap{height:72px}.map-caption{font-size:7px;padding:4px}.accel-panel{bottom:calc(var(--edge) + 111px)}.cluster{right:var(--edge);bottom:calc(var(--edge) + 96px);width:100px}.cluster strong{font-size:42px}.gear-group b{font-size:18px}#motion-info{font-size:8px}.menu-layout{grid-template-columns:96px 1fr;gap:7px}#menu-tabs button{font-size:11px;padding:5px}.menu-layout fieldset{grid-template-columns:1fr!important}.bindings span{display:none}.flight-controls{top:51px}.map-caption{display:flex}}

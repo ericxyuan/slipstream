@@ -1,3 +1,4 @@
+import {streetsX,streetsZ,roadWidth} from "../world/city.js";
 const SVG = "http://www.w3.org/2000/svg";
 function element(tag, attributes, parent) {
   const el = document.createElementNS(SVG, tag);
@@ -6,7 +7,7 @@ function element(tag, attributes, parent) {
   return el;
 }
 export class Minimap {
-  constructor(svg) { this.svg = svg; }
+  constructor(svg) { this.svg = svg; this.zoom=Number(localStorage.getItem("slipstream.zoom"))||1;this.last=0; }
   configure(course, obstacles) {
     const svg = this.svg;
     svg.replaceChildren();
@@ -33,13 +34,16 @@ export class Minimap {
           ridges,
         );
     }
-    const path =
-      course.points
-        .map((p, i) => (i ? "L" : "M") + p.x.toFixed(1) + " " + p.z.toFixed(1))
-        .join(" ") + (course.closed ? "Z" : "");
-    element("path", { d: path, class: "map-road", style: "stroke-width:" + size * 0.016 }, svg);
-    this.goal = element("circle", { r: size * 0.027, fill: "#85f4cc" }, svg);
-    this.scale = size / 550;
+    const path=pts=>pts.map((p,i)=>(i?"L":"M")+p.x.toFixed(1)+" "+p.z.toFixed(1)).join(" ");
+    if(course.id==="city"){
+      for(const x of streetsX)element("path",{d:"M"+x+" -280V240",stroke:"#a8b1b799","stroke-width":roadWidth("x",x)*.59},svg);
+      for(const z of streetsZ)element("path",{d:"M-160 "+z+"H280",stroke:"#a8b1b799","stroke-width":roadWidth("z",z)*.59},svg);
+    }else element("path",{d:path(course.network??course.points),class:"map-road",style:"stroke-width:6"},svg);
+    if(course.format!=="free")element("path",{d:path(course.route??course.points),stroke:"#7ce8c5","stroke-width":2},svg);
+    for(const g of course.gates)element("circle",{cx:g.x,cy:g.z,r:1.7,fill:"#eee"},svg);
+    this.goal=element("circle",{r:3.2,fill:"#87ffd2"},svg);
+    this.peers=element("g",{},svg);this.peerDots=new Map();
+    this.scale=.19;
     this.marker = element("g", { class: "map-marker" }, svg);
     element("circle", { r: 31, class: "marker-halo" }, this.marker);
     element("path", { d: "M0 -23 L16 16 L0 9 L-16 16 Z" }, this.marker);
@@ -49,6 +53,15 @@ export class Minimap {
     if (gate) { this.goal.setAttribute("cx", gate.x); this.goal.setAttribute("cy", gate.z); }
   }
   update(s) {
+    const now=performance.now();if(now-this.last<40)return;this.last=now;
+    const span=(115+Math.min(s.groundSpeed,80)*1.5)*this.zoom;
+    this.svg.setAttribute("viewBox",[s.x-span/2,s.z-span/2,span,span].join(" "));this.scale=span/590;
+    const ids=new Set();
+    for(const p of this.players??[]){ids.add(p.id);let dot=this.peerDots.get(p.id);
+      if(!dot){dot=element("circle",{fill:p.color,r:2.5},this.peers);this.peerDots.set(p.id,dot);}
+      dot.setAttribute("cx",p.state.x);dot.setAttribute("cy",p.state.z);}
+    for(const [id,dot] of this.peerDots)if(!ids.has(id)){dot.remove();this.peerDots.delete(id);}
+
     this.marker.setAttribute(
       "transform",
       `translate(${s.x.toFixed(2)} ${s.z.toFixed(2)}) rotate(${((-s.heading * 180) / Math.PI).toFixed(1)}) scale(${this.scale})`,

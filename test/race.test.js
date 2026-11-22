@@ -5,7 +5,7 @@ import { Race } from "../src/systems/race.js";
 import { VehiclePhysics, STEP } from "../src/vehicle/physics.js";
 import { vehicles } from "../src/vehicle/catalog.js";
 
-function stage(id, length, surface, spec = vehicles[0], preload = true) {
+function stage(id, length, surface, spec = vehicles[0], preload = false) {
   const course = courseLayout(id, length, surface);
   const car = new VehiclePhysics([]);
   car.configure(spec);
@@ -16,14 +16,14 @@ function stage(id, length, surface, spec = vehicles[0], preload = true) {
   for (let i = 0; i < 360; i++) race.step(car, { forward: preload }, STEP);
   assert.equal(car.state.z, start.z);
   assert.equal(car.state.groundSpeed, 0);
-  assert.equal(car.state.throttle, id === "drag" && preload ? 1 : 0);
+  assert.equal(car.state.throttle, 0);
   assert.equal(race.phase, "running");
   assert.equal(race.elapsed, 0);
   return { car, race };
 }
 
 function dragRun(length, surface, delay = 0) {
-  const { car, race } = stage("drag", length, surface, vehicles[0], !delay);
+  const { car, race } = stage("drag", length, surface, vehicles[0], false);
   for (let i = 0; i < delay; i++) race.step(car, {}, STEP);
   for (let i = 0; i < 60000 && race.phase !== "finished"; i++) race.step(car, { forward: true }, STEP);
   assert.equal(race.phase, "finished");
@@ -35,7 +35,7 @@ test("the timing slip includes reaction time and stops at the selected finish li
   const staged = dragRun(50, "prepared"), manual = dragRun(50, "prepared", 40);
   assert.equal(staged.reaction, 0);
   assert.ok(Math.abs(manual.reaction - 40 * STEP) < 1e-9);
-  assert.ok(manual.elapsed > staged.elapsed + manual.reaction);
+  assert.ok(Math.abs(manual.elapsed - staged.elapsed - manual.reaction) < STEP);
   assert.ok(dragRun(2000, "prepared").elapsed > staged.elapsed);
 });
 
@@ -49,11 +49,11 @@ test("the same launch on progressively looser surfaces trades acceleration for w
   }
 });
 
-test("the drag strip keeps the flying Roadster on its tyres", () => {
+test("the Roadster can use cold-gas propulsion over a drag strip", () => {
   const { car, race } = stage("drag", 201, "wet", vehicles.find(v => v.flying));
   for (let i = 0; i < 240; i++) race.step(car, { forward: true, rise: true }, STEP);
-  assert.equal(car.state.altitude, 0);
-  assert.ok(race.maxSlip > 0);
+  assert.ok(car.state.altitude > 1);
+  assert.ok(car.state.rearThrust > 0 && car.state.mode === 2);
 });
 
 for (const id of ["city", "sky"]) test(id + " requires every gate in order with a directed crossing", () => {

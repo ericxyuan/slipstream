@@ -1,4 +1,5 @@
 const keys = {
+  KeyJ:"jump", ShiftLeft:"boost", ShiftRight:"boost",KeyX:"menu",KeyF:"arm",Escape:"cancel",
   KeyE: "rise",
   KeyQ: "lower",
   KeyW: "forward",
@@ -48,15 +49,10 @@ export class Input {
       { passive: false },
     );
     window.addEventListener("keydown", (e) => {
-      if (document.querySelector("dialog[open]")) return;
-      const action = keys[e.code];
-      if (!action || e.ctrlKey || e.metaKey || e.altKey) return;
-      if (
-        e.code === "Space" &&
-        e.target instanceof HTMLButtonElement &&
-        e.target.matches(":focus-visible")
-      )
-        return;
+      if(e.target.closest?.("input,select,textarea,[contenteditable=true]"))return;
+      if(document.querySelector("dialog[open]")&&e.code!=="KeyX")return;
+      const action=keys[e.code];
+      if(!action||e.ctrlKey||e.metaKey||e.altKey)return;
       e.preventDefault();
       if (!e.repeat) this.press(e.code, action);
     });
@@ -77,7 +73,7 @@ export class Input {
       for (const event of ["pointerup", "pointercancel", "lostpointercapture"])
         el.addEventListener(event, (e) => this.held.delete(e.pointerId));
       el.addEventListener("keydown", (e) => {
-        if (["Space", "Enter"].includes(e.code)) {
+        if (e.code==="Enter" && !e.repeat) {
           e.preventDefault();
           e.stopPropagation();
           this.press("btn" + e.code, action);
