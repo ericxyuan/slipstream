@@ -34,7 +34,7 @@ body {
   background: var(--ink);
   color: #faf8f4;
   font:
-    15px Barlow,
+    18px Barlow,
     Arial,
     sans-serif;
   display: flex;
@@ -80,7 +80,7 @@ header {
 }
 .identity h1 {
   font:
-    italic 900 27px/1 Brand,
+    italic 900 31px/1 Brand,
     Arial,
     sans-serif;
   letter-spacing: -1.2px;
@@ -105,13 +105,13 @@ header {
 .camera,
 .cluster small,
 .meter {
-  font: 10px/1.2 var(--mono);
+  font: 13px/1.2 var(--mono);
   letter-spacing: 1.4px;
   text-transform: uppercase;
 }
 .product {
   color: #a6a7a6;
-  font-size: 10px;
+  font-size: 13px;
 }
 .status,
 .live,
@@ -126,7 +126,7 @@ header {
 .live {
   gap: 8px;
   color: #c4cbc2;
-  font-size: 9px;
+  font-size: 12px;
 }
 .live i {
   width: 6px;
@@ -187,7 +187,7 @@ main {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 9px;
+  font-size: 12px;
   color: #fff;
   letter-spacing: 1.7px;
 }
@@ -197,7 +197,7 @@ main {
 }
 .location h2 {
   font:
-    italic 800 clamp(28px, 3vw, 45px) / 1.14 Gauge,
+    italic 800 clamp(32px, 3vw, 51px) / 1.14 Gauge,
     sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.1px;
@@ -230,7 +230,7 @@ button:focus-visible {
   border: 1px solid #ffffff30;
   border-radius: 5px;
   padding: 8px 10px;
-  font-size: 10px;
+  font-size: 13px;
   letter-spacing: 0.8px;
 }
 .camera:hover {
@@ -243,7 +243,7 @@ button:focus-visible {
 .camera kbd {
   height: 18px;
   min-width: 18px;
-  font-size: 10px;
+  font-size: 13px;
   background: #ffffff13;
   border-color: #ffffff45;
 }
@@ -261,7 +261,7 @@ button:focus-visible {
   display: flex;
   gap: 8px;
   align-items: center;
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 1.5px;
   margin-bottom: 14px;
 }
@@ -276,7 +276,7 @@ button:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.6px;
   color: #c1c1bc;
 }
@@ -320,7 +320,7 @@ button:focus-visible {
 }
 .cluster strong {
   font:
-    italic 800 clamp(78px, 7.8vw, 122px) / 0.78 Gauge,
+    italic 800 clamp(88px, 7.8vw, 134px) / 0.78 Gauge,
     Arial,
     sans-serif;
   letter-spacing: -3px;
@@ -330,7 +330,7 @@ button:focus-visible {
   color: #ffffff63;
 }
 .cluster small {
-  font-size: 10px;
+  font-size: 13px;
   margin-top: 10px;
   letter-spacing: 1.9px;
 }
@@ -343,7 +343,7 @@ button:focus-visible {
   color: #181919;
   background: var(--accent);
   font:
-    italic 800 29px/1 Gauge,
+    italic 800 33px/1 Gauge,
     sans-serif;
   text-shadow: none;
   transform: skewX(-5deg);
@@ -351,7 +351,7 @@ button:focus-visible {
 }
 .gear-group small {
   color: #e8dfd3;
-  font-size: 9px;
+  font-size: 12px;
 }
 .revbar {
   margin: 14px 1px 0 3px;
@@ -379,7 +379,7 @@ footer {
   align-items: center;
   gap: 9px;
   color: #bbbdbb;
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 1.25px;
   padding-right: 22px;
   border-right: 1px solid #3a3b3c;
@@ -406,7 +406,7 @@ footer {
 }
 .bindings span {
   font:
-    13px Barlow,
+    16px Barlow,
     sans-serif;
   color: #d0d0cd;
   white-space: nowrap;
@@ -428,7 +428,7 @@ kbd {
   border-radius: 4px;
   box-shadow: 0 1px 0 #090a0a45;
   color: #e7e8e4;
-  font: 11px/1 var(--mono);
+  font: 14px/1 var(--mono);
   text-transform: uppercase;
   letter-spacing: 0;
 }
@@ -462,7 +462,7 @@ kbd {
     gap: 8px;
   }
   .bindings span {
-    font-size: 12px;
+    font-size: 15px;
   }
 }
 @media (max-width: 730px) {
@@ -470,7 +470,7 @@ kbd {
     display: none;
   }
   .product {
-    font-size: 9px;
+    font-size: 12px;
   }
   header {
     gap: 13px;
@@ -497,7 +497,7 @@ kbd {
     height: 51px;
   }
   .identity h1 {
-    font-size: 23px;
+    font-size: 27px;
   }
   .mark {
     width: 27px;
@@ -513,11 +513,11 @@ kbd {
     gap: 10px;
   }
   .live {
-    font-size: 8px;
+    font-size: 11px;
     letter-spacing: 0.8px;
   }
   .perf {
-    font-size: 9px;
+    font-size: 12px;
   }
   .telemetry {
     bottom: 19px;
@@ -527,15 +527,15 @@ kbd {
     min-width: 125px;
   }
   .cluster strong {
-    font-size: 64px;
+    font-size: 70px;
   }
   .gear-group b {
     min-width: 27px;
     height: 30px;
-    font-size: 23px;
+    font-size: 27px;
   }
   .cluster small {
-    font-size: 8px;
+    font-size: 11px;
   }
   .bindings {
     display: grid;
@@ -560,10 +560,10 @@ kbd {
     display: none;
   }
   .location h2 {
-    font-size: 29px;
+    font-size: 33px;
   }
   .eyebrow {
-    font-size: 8px;
+    font-size: 11px;
   }
 }
 @media (max-height: 475px) {
@@ -578,14 +578,14 @@ kbd {
     top: 11px;
   }
   .location h2 {
-    font-size: 24px;
+    font-size: 28px;
   }
   .telemetry,
   .cluster {
     bottom: 12px;
   }
   .cluster strong {
-    font-size: 56px;
+    font-size: 64px;
   }
   .telemetry {
     padding: 9px;
@@ -612,7 +612,7 @@ kbd {
   display: flex;
   justify-content: space-between;
   padding: 10px 11px 0;
-  font: 9px var(--mono);
+  font: 12px var(--mono);
   text-transform: uppercase;
   letter-spacing: 1px;
   color: #e7e7e3;
@@ -656,7 +656,7 @@ kbd {
   align-items: center;
   gap: 5px;
   width: 87px;
-  font-size: 8px;
+  font-size: 11px;
 }
 .steering-track {
   height: 5px;
@@ -710,13 +710,13 @@ kbd {
 }
 .vehicle-strip span {
   font:
-    12px/1.2 Barlow,
+    15px/1.2 Barlow,
     sans-serif;
 }
 .vehicle-strip small {
   display: block;
   color: var(--accent);
-  font: 8px var(--mono);
+  font: 11px var(--mono);
   letter-spacing: 1px;
   margin-top: 2px;
 }
@@ -740,11 +740,11 @@ kbd {
   border: 0;
   background: transparent;
   padding: 0;
-  font-size: 12px;
+  font-size: 15px;
 }
 .flight-controls span {
   color: var(--accent);
-  font: 10px var(--mono);
+  font: 13px var(--mono);
   min-width: 36px;
 }
 .flight-controls button:active kbd {
@@ -790,7 +790,7 @@ footer,
     top: 62px;
   }
   .map-caption {
-    font-size: 7px;
+    font-size: 10px;
     padding: 6px;
   }
   .map-caption span:first-child {
@@ -805,20 +805,20 @@ footer,
     padding: 4px;
   }
   .vehicle-strip span {
-    font-size: 11px;
+    font-size: 14px;
   }
   .bindings {
     grid-template-columns: repeat(4, auto);
   }
   .bindings span {
-    font-size: 10px;
+    font-size: 13px;
   }
   .bindings button {
     gap: 3px;
   }
   .bindings kbd {
     min-width: 18px;
-    font-size: 9px;
+    font-size: 12px;
   }
   .bindings .steer {
     gap: 1px;
@@ -837,7 +837,7 @@ footer,
   }
   .map-caption {
     padding: 4px;
-    font-size: 7px;
+    font-size: 10px;
   }
   #minimap {
     height: 60px;
@@ -861,10 +861,10 @@ footer,
     gap: 6px;
   }
   .flight-controls button {
-    font-size: 10px;
+    font-size: 13px;
   }
   .flight-controls span {
-    font-size: 9px;
+    font-size: 12px;
   }
 }
 
@@ -904,10 +904,10 @@ header .status {
 }
 #race-progress {
   display: block;
-  font: 10px/1.5 var(--mono);
+  font: 13px/1.5 var(--mono);
 }
 .action-button {
-  font-size: 12px;
+  font-size: 15px;
   margin-top: 5px;
   padding: 4px 9px;
 }
@@ -931,11 +931,11 @@ button:disabled {
 #launch-signal strong {
   display: block;
   font:
-    italic 800 clamp(58px, 9vh, 104px)/1 Gauge,
+    italic 800 clamp(65px, 9vh, 115px)/1 Gauge,
     sans-serif;
 }
 #launch-signal small {
-  font: 11px/1.4 var(--mono);
+  font: 14px/1.4 var(--mono);
 }
 .lights {
   display: flex;
@@ -982,7 +982,7 @@ dialog::backdrop {
 }
 .dialog-heading h2 {
   font:
-    italic 800 34px/1 Gauge,
+    italic 800 39px/1 Gauge,
     sans-serif;
   text-transform: uppercase;
   margin: 0;
@@ -990,7 +990,7 @@ dialog::backdrop {
 .close {
   border: 0;
   background: transparent;
-  font: 24px/1 sans-serif;
+  font: 28px/1 sans-serif;
   color: #bdc7cb;
   padding: 4px 8px;
 }
@@ -1030,20 +1030,20 @@ dialog::backdrop {
 .course-option small,
 fieldset legend,
 .result-time span {
-  font: 9px var(--mono);
+  font: 12px var(--mono);
   text-transform: uppercase;
   letter-spacing: 1px;
   color: #c5cecf;
 }
 .course-option b {
   display: block;
-  font-size: 18px;
+  font-size: 21px;
   line-height: 1.15;
 }
 .course-option em {
   display: block;
   font:
-    12px Barlow,
+    15px Barlow,
     sans-serif;
   color: #bac4c9;
   margin-top: 2px;
@@ -1059,7 +1059,7 @@ fieldset legend,
 #strip-settings label {
   flex: 1;
   min-width: 0;
-  font-size: 12px;
+  font-size: 15px;
 }
 #strip-settings input,
 #strip-settings select {
@@ -1076,7 +1076,7 @@ fieldset legend,
   color: #151a1b;
   background: var(--accent);
   font:
-    16px Barlow,
+    19px Barlow,
     sans-serif;
   border: 0;
   border-radius: 4px;
@@ -1115,7 +1115,7 @@ fieldset legend,
 }
 #result-stats dd {
   text-align: right;
-  font: 14px var(--mono);
+  font: 17px var(--mono);
 }
 .result-actions {
   display: flex;
@@ -1187,13 +1187,13 @@ main {
   min-width: 128px;
 }
 .cluster strong {
-  font-size: clamp(54px, 5.5vw, 90px);
+  font-size: clamp(62px, 6.5vw, 104px);
 }
 .telemetry,
 .location:has(#race-info:not([hidden])) ~ .telemetry {
   display: block;
   bottom: var(--edge);
-  width: 156px;
+  width: 198px;
   padding: 12px;
 }
 .meter + .meter {
@@ -1205,7 +1205,7 @@ main {
 .accel-panel {
   position: absolute;
   bottom: var(--edge);
-  left: calc(var(--edge) + 166px);
+  left: calc(var(--edge) + 210px);
   padding: 12px;
   border: 1px solid #ffffff32;
   border-radius: 5px;
@@ -1215,12 +1215,12 @@ main {
   display: block;
 }
 .accel-panel small {
-  font-size: 10px;
+  font-size: 13px;
   color: #ddd;
 }
 .accel-panel output,
 #motion-info {
-  font: 10px var(--mono);
+  font: 13px var(--mono);
   margin: 3px 0 7px;
 }
 #motion-info {
@@ -1251,7 +1251,7 @@ meter {
 #party-hud {
   white-space: pre-line;
   padding: 7px;
-  font: 11px var(--mono);
+  font: 14px var(--mono);
   margin-top: 7px;
 }
 dialog {
@@ -1264,12 +1264,12 @@ dialog::backdrop {
   background: #0b172332;
 }
 #course-dialog {
-  width: min(780px, 94vw);
+  width: min(860px, 95vw);
   max-height: 85dvh;
 }
 .menu-layout {
   display: grid;
-  grid-template-columns: 160px 1fr;
+  grid-template-columns: 182px minmax(0, 1fr);
   gap: 20px;
 }
 #menu-tabs {
@@ -1296,7 +1296,7 @@ dialog::backdrop {
   padding: 1px 6px 5px 2px;
 }
 #menu-pane h3 {
-  font-size: 23px;
+  font-size: 27px;
   margin: 7px 0;
 }
 #menu-pane p,
@@ -1313,17 +1313,18 @@ dialog::backdrop {
   padding: 10px;
 }
 #menu-pane legend {
-  font-size: 11px;
+  font-size: 14px;
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }
 #menu-pane label {
   display: block;
-  font-size: 12px;
+  font-size: 15px;
   margin: 4px 0;
 }
 #menu-pane input:not([type="checkbox"]),
 #menu-pane select {
+  font: inherit;
   display: block;
   width: 100%;
   margin-top: 3px;
@@ -1380,7 +1381,7 @@ dialog::backdrop {
 @media (max-width: 860px) {
   .accel-panel {
     left: var(--edge);
-    bottom: calc(var(--edge) + 138px);
+    bottom: calc(var(--edge) + 164px);
     padding: 6px 9px;
   }
   .accel-panel .panel-title {
@@ -1401,13 +1402,13 @@ dialog::backdrop {
     min-width: 82px;
   }
   .cluster strong {
-    font-size: 54px;
+    font-size: 62px;
   }
 }
 @media (max-width: 600px) {
   .telemetry,
   .location:has(#race-info:not([hidden])) ~ .telemetry {
-    width: 115px;
+    width: 145px;
     padding: 7px;
   }
   .minimap {
@@ -1417,32 +1418,32 @@ dialog::backdrop {
     height: 72px;
   }
   .map-caption {
-    font-size: 7px;
+    font-size: 10px;
     padding: 4px;
   }
   .accel-panel {
-    bottom: calc(var(--edge) + 111px);
+    bottom: calc(var(--edge) + 174px);
   }
   .cluster {
     right: var(--edge);
-    bottom: calc(var(--edge) + 96px);
+    bottom: calc(var(--edge) + 122px);
     width: 100px;
   }
   .cluster strong {
-    font-size: 42px;
+    font-size: 50px;
   }
   .gear-group b {
-    font-size: 18px;
+    font-size: 21px;
   }
   #motion-info {
-    font-size: 8px;
+    font-size: 11px;
   }
   .menu-layout {
-    grid-template-columns: 96px 1fr;
+    grid-template-columns: 112px minmax(0, 1fr);
     gap: 7px;
   }
   #menu-tabs button {
-    font-size: 11px;
+    font-size: 14px;
     padding: 5px;
   }
   .menu-layout fieldset {
@@ -1478,4 +1479,25 @@ dialog::backdrop {
   width: 7px;
   height: 7px;
   border-radius: 50%;
+}
+
+/* Keep key labels in reach when the full-size control legend is wider than the viewport. */
+.bindings { min-width: 0; overflow-x: auto; }
+.bindings > * { flex-shrink: 0; }
+.map-caption { flex-wrap: wrap; gap: 2px 6px; letter-spacing: .4px; }
+@media (max-width: 600px) {
+  #menu-tabs { max-height: 57dvh; overflow-y: auto; }
+  .map-caption { justify-content: space-between; }
+  .cluster { width: 124px; }
+  .accel-panel output { font-size: 11px; }
+  .vehicle-strip { max-width: min(55vw, 220px); }
+}
+@media (max-width: 550px) {
+  header { gap: 8px; padding-inline: 10px; }
+  .course-button { gap: 4px; padding-inline: 7px; white-space: nowrap; }
+  header .status { gap: 3px; }
+  header .course-button svg { display: none; }
+}
+@media (max-width: 380px) {
+  header .perf svg { display: none; }
 }
