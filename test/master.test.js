@@ -177,3 +177,50 @@ test("class eligibility and route validation use the same rules as the host", as
   assert.throws(() => validate({ ...config, map: "sky" }));
   assert.throws(() => validate({ start: 70, end: 20 }));
 });
+
+test("drag length sets the actual finish and bounds in every map and direction", () => {
+  for (const map of ["city", "desert", "sky", "drag"])
+    for (const reverse of [true, false])
+      for (const distance of [1, 402, 100_000, 1_000_000]) {
+        const c = makeCourse({ map, format: "drag", distance, reverse, start: 10, end: 70 }, 12, 11);
+        const gate = c.gates[0], start = c.startLine;
+        assert.equal(c.routeLength, distance);
+        assert.equal(Math.hypot(gate.x - start.x, gate.z - start.z), distance);
+        assert.equal(Math.sign(gate.dz), reverse ? 1 : -1);
+        assert.ok(c.spawn.z >= c.bounds[2] && c.spawn.z <= c.bounds[3]);
+        assert.ok(gate.z > c.bounds[2] && gate.z < c.bounds[3]);
+        assert.ok(Math.abs(c.spawn.x - gate.x) < gate.radius);
+        assert.deepEqual(makeCourse(c.config, 12, 11).spawn, c.spawn);
+        const at = (d) => ({ x: c.spawn.x, z: gate.z + gate.dz * d, altitude: gate.y, wheelSlip: 0, groundSpeed: 40 });
+        const r = new Race(c);
+        r.start(0);
+        r.step({previous: at(-0.1), state: at(0.1), step() {}}, {}, STEP, 4);
+        assert.equal(r.phase, "finished");
+      }
+  for (const distance of [0, -1, 10.5, Infinity, NaN])
+    assert.throws(() => makeCourse({ format: "drag", distance }));
+});
+test("race-specific fields match the active format, map and party", async () => {
+  const { eventOptions } = await import("../src/world/events.js");
+  const drag = eventOptions("city", "drag", "custom", false);
+  assert.ok(drag.sections && drag.distance && drag.reverse);
+  assert.ok(!drag.route && !drag.start && !drag.end && !drag.checkpoints && !drag.laps && !drag.dnf);
+  const circuit = eventOptions("city", "circuit", "original", true);
+  assert.ok(circuit.laps && circuit.checkpoints && circuit.route && circuit.dnf);
+  assert.ok(!circuit.distance && !circuit.end && !circuit.sections);
+  const sky = eventOptions("sky", "free", "custom", false);
+  assert.ok(!sky.surface && !sky.sections && !sky.vehicleClass && !sky.countdown);
+});
+test("the acceleration display combines lateral and vertical components in both units", async () => {
+  const { combinedAcceleration } = await import("../src/systems/readouts.js");
+  assert.equal(combinedAcceleration({ lateralAccel: -3, verticalAccel: 4, acceleration: 50 }), "5.00 m/s² · 0.51 g");
+});
+test("only the U9 accepts jump and only the Roadster accepts lift", async () => {
+  const { supportsControl } = await import("../src/vehicle/classes.js");
+  for (const v of vehicles) {
+    assert.equal(supportsControl(v, "jump"), !!v.jump);
+    assert.equal(supportsControl(v, "rise"), !!v.flying);
+    assert.equal(supportsControl(v, "lower"), !!v.flying);
+    assert.equal(supportsControl(v, "forward"), true);
+  }
+});

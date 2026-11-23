@@ -1501,3 +1501,67 @@ dialog::backdrop {
 @media (max-width: 380px) {
   header .perf svg { display: none; }
 }
+
+.drive-hud {
+  position: absolute;
+  bottom: var(--edge);
+  right: var(--edge);
+  display: grid;
+  grid-template-columns: minmax(145px, 1fr) minmax(140px, auto) clamp(100px, 9vw, 146px);
+  gap: clamp(13px, 1.4vw, 24px);
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid #ffffff38;
+  border-radius: 7px;
+  background: linear-gradient(110deg, #111a20d9, #162028ad);
+  backdrop-filter: blur(7px);
+  color: #f7f8f8;
+  pointer-events: none;
+}
+.drive-hud .minimap { position: static; width: 100%; background: none; backdrop-filter: none; border-width: 0 0 0 1px; border-radius: 0; padding-left: 10px; }
+.drive-hud #minimap { height: clamp(72px, 7.4vw, 112px); }
+.drive-hud .map-caption { padding: 0 0 4px; }
+.drive-inputs { display: grid; gap: 7px; font: 13px var(--mono); }
+.axis-labels, .drive-lamps, .shift-legend { display: flex; justify-content: space-between; gap: 5px; }
+.axis-labels { margin-bottom: 4px; }
+.input-axis { --left: 0%; --right: 0%; position: relative; height: 6px; border-radius: 4px; background: #ffffff28; }
+.input-axis::before, .input-axis::after { content: ""; position: absolute; top: 0; height: 100%; background: var(--accent); }
+.input-axis::before { width: var(--left); right: 50%; }
+.input-axis::after { width: var(--right); left: 50%; }
+#pedal-axis::before, #brake-level { background: #ff946f; }
+.input-axis i, .input-axis b { position: absolute; top: -2px; height: 10px; width: 2px; left: 50%; background: #fff7; z-index: 1; }
+.input-axis b { left: calc(50% + var(--right) - var(--left)); background: white; transform: translateX(-50%); }
+.acceleration span, .acceleration output { display: block; }
+.acceleration span, .shift-legend, .drive-lamps { font: 11px var(--mono); text-transform: uppercase; letter-spacing: .05em; }
+.acceleration output { margin-top: 2px; white-space: nowrap; }
+.drive-lamps span { color: #c3c8ca; }
+.drive-lamps span.on { color: var(--accent); }
+.drive-lamps span::before { content: "● "; opacity: .45; }
+.drive-lamps span.on::before { opacity: 1; }
+.instruments { min-width: 0; }
+.instruments .speed-row { gap: 12px; }
+.instruments strong { font: italic 800 clamp(58px, 5vw, 95px)/.85 Gauge, sans-serif; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
+.instruments strong span { color: #ffffff58; }
+.instruments small { font: 13px var(--mono); text-transform: uppercase; }
+.instruments #motion-info { font: 12px var(--mono); max-width: 190px; }
+.shift-gauge { position: relative; height: 13px; overflow: hidden; transform: skewX(-12deg); background: #ffffff1a; }
+.shift-back, .shift-back i, .shift-gauge .revbar { position: absolute; inset: 0; }
+.shift-back { display: flex; }
+.shift-back i { position: static; flex: 1; transform: scaleX(0); transform-origin: left; }
+#regen-level { background: #62ddb6; transform-origin: right; }
+.shift-gauge .revbar { margin: 0; transform: none; align-items: center; gap: 2px; }
+.shift-gauge .revbar i { height: 3px; }
+.shift-legend { margin-top: 3px; color: #ffae91; }
+#regen-label { color: #83ebc4; }
+@media (max-width: 600px), (max-height: 475px) {
+  .drive-hud { grid-template-columns: minmax(116px,1fr) minmax(100px,1fr) minmax(54px,.52fr); gap: 9px; padding: 8px; max-width: calc(100% - 16px); right: 8px; bottom: 8px; }
+  .drive-hud .minimap { padding-left: 6px; }
+  .drive-hud .map-caption span:first-child { display: none; }
+  .drive-inputs { font-size: 12px; gap: 4px; }
+  .drive-hud #minimap { height: 65px; }
+  .instruments strong { font-size: 46px; }
+  .instruments .speed-row { gap: 6px; }
+  .instruments .gear-group b { min-width: 26px; height: 26px; font-size: 22px; }
+  .instruments #motion-info { font-size: 11px; }
+  .acceleration span, .shift-legend, .drive-lamps { font-size: 10px; }
+}

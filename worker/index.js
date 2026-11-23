@@ -1,4 +1,4 @@
-import { eligible } from "../src/vehicle/classes.js";
+import { eligible, supportsControl } from "../src/vehicle/classes.js";
 import { makeCourse, validate, defaults } from "../src/world/events.js";
 import { vehicles } from "../src/vehicle/catalog.js";
 import { VehiclePhysics, STEP } from "../src/vehicle/physics.js";
@@ -250,7 +250,7 @@ export class Party {
           if (!Number.isSafeInteger(msg.seq) || msg.seq <= p.seq) return;
           p.seq = msg.seq;
           p.input = Object.fromEntries(
-            allowed.map((k) => [k, msg.controls?.[k] === true]),
+            allowed.map((k) => [k, msg.controls?.[k] === true && supportsControl(p.car.spec, k)]),
           );
           p.ping = Math.max(0, Math.min(10000, Number(msg.ping) || 0));
           return;
@@ -281,6 +281,7 @@ export class Party {
         ) {
           p.vehicle = msg.vehicle;
           p.car.configure(vehicles.find((v) => v.id === p.vehicle));
+          p.input = {};
           p.ready = false;
         } else if (id !== this.host)
           throw Error("Only the host can change the event");

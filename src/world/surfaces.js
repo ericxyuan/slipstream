@@ -25,7 +25,7 @@ export const surfaces = Object.fromEntries(
 export function surfaceAt(course, x, z) {
   if (
     course?.config?.surface === "original" &&
-    course.id === "desert" &&
+    course.id === "desert" && course.format !== "drag" &&
     course.network
   ) {
     // Reuse the sampled road centreline on both client and server.

@@ -115,7 +115,7 @@ export function surfaceOverlay(group, c) {
       (a.x + b.x) / 2,
       0.025,
       (a.z + b.z) / 2,
-      c.id === "drag" ? c.stripWidth : c.id === "city" ? 14 : 15,
+      c.stripWidth ?? (c.id === "city" ? 14 : 15),
       0.008,
       len + 0.05,
     );
@@ -133,7 +133,7 @@ export function startFinish(group, course) {
     group.add(stripe);
     stripe.position.set(gate.x, 0.05, gate.z);
     stripe.rotation.y = Math.atan2(-gate.dx, -gate.dz);
-    const width = course.id === "drag" ? course.stripWidth : 13,
+    const width = course.stripWidth ?? 13,
       size = width / 24;
     for (let row = 0; row < 2; row++)
       for (let i = 0; i < 24; i++)

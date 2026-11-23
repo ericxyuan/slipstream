@@ -1,6 +1,6 @@
-import { classes } from "../vehicle/classes.js";
+import { classes, eligible } from "../vehicle/classes.js";
 import { courses, surfaces } from "../world/courses.js";
-import { defaults, formats, makeCourse } from "../world/events.js";
+import { defaults, eventOptions, formats, makeCourse } from "../world/events.js";
 import { vehicles } from "../vehicle/catalog.js";
 import { GaragePreview } from "./garage-preview.js";
 import { terminal } from "./race.js";
@@ -39,15 +39,30 @@ const num = (name, label, min, max) =>
   name +
   '" min="' +
   min +
-  '" max="' +
-  max +
-  '"></label>';
+  '"' +
+  (max == null ? "" : ' max="' + max + '"') +
+  "></label>";
 const btn = (id, label) =>
   '<button type="button" id="' +
   id +
   '" class="secondary-button">' +
   label +
   "</button>";
+function eventSummary(c, multiplayer, length) {
+  const show = eventOptions(c.map, c.format, c.surface, multiplayer);
+  return [
+    courses[c.map].name, formats[c.format],
+    c.format !== "free" && length != null && Math.round(length) + " m",
+    length == null && c.format === "drag" && c.distance + " m",
+    show.surface && (surfaces[c.surface]?.name ?? c.surface),
+    show.laps && c.laps + (c.laps === 1 ? " lap" : " laps"),
+    show.countdown && c.countdown + " s countdown",
+    show.vehicleClass ? classes[c.vehicleClass] : "Roadster Rocket Edition",
+    show.rules && c.rules, show.collision && c.collision,
+    show.dnf && (c.dnf ? "DNF " + c.dnf + " s" : "DNF off"),
+    show.players && "up to " + c.players + " drivers",
+  ].filter(Boolean).join(" · ");
+}
 function saved(k, fallback) {
   try {
     return JSON.parse(localStorage.getItem(k)) ?? fallback;
@@ -66,6 +81,9 @@ export class RaceUI {
     this.draft = { ...this.config };
     this.action = el("race-action");
     this.signal = el("launch-signal");
+    this.readyButton = el("race-ready");
+    this.readyButton.onclick = () => this.ready();
+    this.cycleButtons = [...document.querySelectorAll('[data-control="previous"],[data-control="next"]')];
     for (const name of tabs) {
       const b = document.createElement("button");
       b.textContent = name;
@@ -108,22 +126,44 @@ export class RaceUI {
     this.dialog.showModal();
     this.show(tab ?? "Drive");
   }
+  canCycle() {
+    if (this.race.course.id === "sky" || ["countdown", "running"].includes(this.race.phase) || this.api.party().state?.active) return false;
+    const fleet = this.api.fleet;
+    return fleet.rotation.some(id => {
+      const model = vehicles.find(v => v.id === id);
+      return id !== vehicles[fleet.index].id && eligible(model, this.race.course.config);
+    });
+  }
+  canStart() {
+    const room = this.api.party();
+    return this.race?.phase === "ready" && (!room.id || (room.state?.host === room.id &&
+      !room.state.active && room.state.players.every(p => p.connected && p.ready)));
+  }
+  ready() {
+    const room = this.api.party(), self = room.state?.players.find(p => p.id === room.id);
+    if (self && !room.state.active && this.race.phase === "ready")
+      room.send({ type: "ready", ready: !self.ready });
+  }
   arm() {
-    const p = this.api.party();
-    if (terminal(this.race.phase)) {
-      this.finish();
-      return;
+    const room = this.api.party();
+    if (terminal(this.race.phase)) return this.finish();
+    if (this.race.phase === "countdown") {
+      if (!room.id) this.race.cancel();
+      else if (room.state?.host === room.id) room.send({ type: "reset" });
+    } else if (this.canStart()) {
+      if (room.id) {
+        room.send({ type: "start" });
+        this.dialog.close();
+      }
+      else this.race.start();
     }
-    if (p.id)
-      p.send({ type: this.race.phase === "countdown" ? "reset" : "start" });
-    else if (this.race.phase === "countdown") this.race.cancel();
-    else this.race.start();
   }
   reset(race) {
     this.race = race;
     this.config = race.course.config;
     this.draft = { ...this.config };
     this.lastPhase = null;
+    this.cyclesEnabled = null;
     el("course-name").textContent = race.course.name;
     el("course-type").textContent = race.course.type;
     el("race-info").hidden = race.phase === "free";
@@ -191,12 +231,16 @@ export class RaceUI {
           "A D / ← →": "Steer",
           Space: "Handbrake",
           Shift: "Boost",
-          "E / Q": "Rise / lower Roadster",
-          J: "U9 suspension jump",
-          SCROLL: "Change active vehicle",
+          ...(vehicles[a.fleet.index].flying ? { "E / Q": "Rise / lower" } : {}),
+          ...(vehicles[a.fleet.index].jump ? { J: "Suspension jump" } : {}),
+          ...(this.canCycle() ? { SCROLL: "Change active vehicle" } : {}),
           "Left drag": "Freelook",
           C: "Recenter / change camera",
-          "F / Esc": "Arm / cancel countdown",
+          ...(this.race.phase !== "free" && (!a.party().id || a.party().id === a.party().state?.host)
+            ? { F: "Start race / view results", Esc: "Cancel countdown" } : {}),
+          ...(a.party().id && this.race.phase === "ready" ? { V: "Toggle race readiness" } : {}),
+          G: "Race configuration",
+          P: "Party management",
           R: "Reset vehicle",
           X: "Open / close menu",
         })
@@ -271,7 +315,7 @@ export class RaceUI {
           : { main: "Full course", short: "Short course" },
       ) +
       pick("reverse", "Direction", { false: "Forward", true: "Reverse" }) +
-      num("distance", "Strip or drag distance (m)", 50, 2000) +
+      num("distance", "Strip length (m)", 1) +
       num("start", "Start along route (%)", 0, 90) +
       num("end", "Finish along route (%)", 10, 100) +
       num("checkpoints", "Checkpoints", 2, 32) +
@@ -295,46 +339,58 @@ export class RaceUI {
     const form = el("event-form");
     for (const [k, v] of Object.entries(c))
       if (form.elements[k]) form.elements[k].value = v;
+    const fields = form.elements;
+    const apply = form.querySelector(".primary-button");
+    // Drag presets contain a single finish gate. Restore a valid count for gate races.
+    if (Number(fields.checkpoints.value) < 2) fields.checkpoints.value = defaults.checkpoints;
     if (mapOnly) {
-      form.elements.format.value = "free";
-      form.querySelectorAll("fieldset")[1].hidden = true;
-      form.querySelectorAll("fieldset")[2].hidden = true;
+      fields.format.value = "free";
+      fields.format.parentElement.hidden = true;
+      apply.textContent = "Drive map";
     }
+    let visible;
     function read() {
-      const raw = Object.fromEntries(new FormData(form));
-      for (const k of Object.keys(defaults))
-        if (typeof defaults[k] === "number") raw[k] = Number(raw[k]);
-      raw.reverse = raw.reverse === "true";
+      const raw = { ...defaults, map: fields.map.value, format: fields.format.value };
+      if (mapOnly && room.id) Object.assign(raw, { players: c.players, collision: c.collision });
+      for (const [key, show] of Object.entries(visible)) {
+        if (!show) continue;
+        const value = fields[key].value;
+        raw[key] = typeof defaults[key] === "number" ? Number(value) :
+          key === "reverse" ? value === "true" : value;
+      }
       return raw;
     }
     const update = () => {
+      const map = fields.map.value, format = fields.format.value;
+      visible = eventOptions(map, format, fields.surface.value, !!room.id);
+      if (mapOnly) {
+        visible.vehicleClass = false;
+        visible.players = visible.collision = false;
+      }
+      const routeField = fields.route;
+      if (routeField.dataset.map !== map) {
+        const prior = routeField.value;
+        routeField.innerHTML = opts(map === "city"
+          ? { main: "Foundry loop", short: "Market block", outer: "Freight perimeter" }
+          : { main: "Full course", short: "Short course" });
+        routeField.value = [...routeField.options].some(o => o.value === prior) ? prior : "main";
+        routeField.dataset.map = map;
+      }
+      fields.players.min = room.state?.players.length ?? 1;
+      if (visible.end) {
+        fields.end.min = Math.max(10, Number(fields.start.value) + 1);
+        if (fields.end.value && Number(fields.end.value) < Number(fields.end.min))
+          fields.end.value = fields.end.min;
+      }
+      for (const [key, show] of Object.entries(visible)) {
+        fields[key].parentElement.hidden = !show;
+        fields[key].disabled = !show || locked;
+      }
+      for (const group of form.querySelectorAll("fieldset"))
+        group.hidden = !group.querySelector("label:not([hidden])");
       try {
-        const v = read(),
-          course = makeCourse(v),
-          pts = course.route;
-        const routeField = form.elements.route;
-        if (routeField.dataset.map !== v.map) {
-          routeField.innerHTML = opts(
-            v.map === "city"
-              ? {
-                  main: "Foundry loop",
-                  short: "Market block",
-                  outer: "Freight perimeter",
-                }
-              : { main: "Full course", short: "Short course" },
-          );
-          routeField.value = [...routeField.options].some(
-            (o) => o.value === v.route,
-          )
-            ? v.route
-            : "main";
-          routeField.dataset.map = v.map;
-        }
-        form.elements.laps.parentElement.hidden = v.format !== "circuit";
-        form.elements.distance.parentElement.hidden =
-          v.format !== "drag" && v.map !== "drag";
+        const v = read(), course = makeCourse(v), pts = course.route;
         this.draft = v;
-        el("sections-label").hidden = v.surface !== "custom";
         const xs = pts.map((p) => p.x),
           zs = pts.map((p) => p.z),
           x = Math.min(...xs),
@@ -361,20 +417,10 @@ export class RaceUI {
             )
             .join("") +
           "</svg>";
-        el("event-summary").textContent = [
-          course.name,
-          course.type,
-          Math.round(course.routeLength) + " m",
-          v.surface,
-          v.collision,
-          course.config.laps + " lap(s)",
-          v.dnf ? "DNF " + v.dnf + " s" : "DNF off",
-          "up to " + v.players + " drivers",
-          v.rules,
-          classes[v.vehicleClass],
-        ].join(" · ");
-        form.querySelector("[type=submit],.primary-button").disabled = !!locked;
+        el("event-summary").textContent = eventSummary(v, !!room.id, course.routeLength);
+        apply.disabled = !!locked;
       } catch (e) {
+        el("route-preview").replaceChildren();
         el("event-summary").textContent = e.message;
         form.querySelector(".primary-button").disabled = true;
       }
@@ -472,7 +518,7 @@ export class RaceUI {
         "model",
         "Vehicle",
         Object.fromEntries(
-          vehicles.map((v) => [v.id, v.pack + " · " + v.name]),
+          vehicles.filter(v => eligible(v, this.race.course.config)).map((v) => [v.id, v.pack + " · " + v.name]),
         ),
       ) +
       '<h3 id="model-name"></h3><p id="model-stats"></p>' +
@@ -497,6 +543,8 @@ export class RaceUI {
     };
     q.onchange = update;
     update();
+    el("use-car").hidden = this.race.course.id === "sky" ||
+      ["countdown", "running"].includes(this.race.phase) || !!this.api.party().state?.active;
     el("use-car").onclick = () => {
       if (this.api.choose(q.value)) this.dialog.close();
       else this.tell("Vehicle selection is locked for this event.");
@@ -531,17 +579,13 @@ export class RaceUI {
       "<h3>Party " +
       room.room +
       '</h3><p id="party-roster"></p><p id="party-event"></p>' +
-      btn("ready-party", "Toggle ready") +
-      btn("arm-party", "Start race") +
+      btn("ready-party", "Toggle ready · V") +
+      btn("arm-party", "Start race · F") +
       btn("reset-party", "Return to lobby") +
       btn("exit-party", "Leave party");
-    el("ready-party").onclick = () =>
-      room.send({
-        type: "ready",
-        ready: !room.state.players.find((p) => p.id === room.id).ready,
-      });
+    el("ready-party").onclick = () => this.ready();
     el("arm-party").onclick = () => {
-      room.send({ type: "start" });
+      this.arm();
       this.dialog.close();
     };
     el("reset-party").onclick = () => room.send({ type: "reset" });
@@ -569,19 +613,12 @@ export class RaceUI {
             (p.connected ? (p.ready ? "Ready" : "In lobby") : "Disconnected"),
         )
         .join("  /  ");
-      el("party-event").textContent = [
-        courses[m.config.map].name,
-        formats[m.config.format],
-        m.config.surface,
-        m.config.collision,
-        m.config.laps + " lap(s)",
-        m.config.dnf + " s DNF",
-        m.config.rules,
-        classes[m.config.vehicleClass],
-        m.players.length + " drivers",
-      ].join(" · ");
-      el("arm-party").disabled = el("reset-party").disabled =
-        m.host !== this.api.party().id;
+      el("party-event").textContent = eventSummary(m.config, true);
+      el("ready-party").hidden = !!m.active || m.config.format === "free";
+      el("arm-party").hidden = m.host !== this.api.party().id || m.active || m.config.format === "free";
+      el("arm-party").disabled = !this.canStart();
+      el("reset-party").hidden = m.host !== this.api.party().id || !m.active ||
+        !m.players.every(p => p.result.phase === "countdown" || terminal(p.result.phase));
     }
   }
   update(s, vehicle) {
@@ -589,32 +626,40 @@ export class RaceUI {
       c = r.course,
       phase = r.phase;
     this.vehicle = vehicle;
+    const cyclesEnabled = this.canCycle();
+    if (this.cyclesEnabled !== cyclesEnabled) {
+      this.cycleButtons.forEach(b => { b.hidden = !cyclesEnabled; });
+      this.cyclesEnabled = cyclesEnabled;
+    }
     if (phase === "free") {
       this.signal.hidden = true;
       return;
     }
+    const room = this.api.party();
+    this.readyButton.hidden = !room.id || phase !== "ready" || room.state?.active;
+    if (!this.readyButton.hidden) {
+      const ready = room.state.players.find(p => p.id === room.id)?.ready;
+      this.readyButton.textContent = ready ? "Unready · V" : "Ready · V";
+    }
+    this.action.hidden = phase === "running" ||
+      (phase === "countdown" && room.id && room.state?.host !== room.id) ||
+      (phase === "ready" && room.id && room.state?.host !== room.id);
+    this.action.disabled = phase === "ready" && !this.canStart();
     if (phase !== this.lastPhase) {
       this.api.audio.tone(phase === "running" ? 780 : 390);
-      this.action.hidden = phase === "running";
       this.action.textContent = terminal(phase)
-        ? "Results"
+        ? "Results · F"
         : phase === "countdown"
-          ? "Cancel"
-          : "Arm race";
+          ? "Cancel · Esc"
+          : "Start race · F";
       if (terminal(phase) && !this.api.party().id) this.finish();
       this.lastPhase = phase;
     }
     const g = c.gates[r.next];
     el("race-progress").textContent =
       phase === "running"
-        ? "Lap " +
-          r.lap +
-          "/" +
-          c.config.laps +
-          " · Gate " +
-          (r.next + 1) +
-          "/" +
-          c.gates.length +
+        ? (c.format === "circuit" ? "Lap " + r.lap + "/" + c.config.laps + " · " : "") +
+          (c.format === "drag" ? "Finish" : "Gate " + (r.next + 1) + "/" + c.gates.length) +
           (g
             ? " · " + Math.round(Math.hypot(g.x - s.x, g.z - s.z)) + " m"
             : "") +

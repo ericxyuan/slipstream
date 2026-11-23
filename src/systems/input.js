@@ -2,6 +2,9 @@ const keys = {
   KeyJ: "jump",
   ShiftLeft: "boost",
   ShiftRight: "boost",
+  KeyG: "configure",
+  KeyP: "partyMenu",
+  KeyV: "ready",
   KeyX: "menu",
   KeyF: "arm",
   Escape: "cancel",
@@ -21,7 +24,8 @@ const keys = {
 };
 export class Input {
   held = new Map();
-  constructor(actions) {
+  constructor(actions, enabled = () => true) {
+    this.enabled = enabled;
     this.actions = actions;
     let lastWheel = -Infinity,
       lastDirection = 0;
@@ -54,10 +58,12 @@ export class Input {
       { passive: false },
     );
     window.addEventListener("keydown", (e) => {
-      if (e.target.closest?.("input,select,textarea,[contenteditable=true]"))
-        return;
-      if (document.querySelector("dialog[open]") && e.code !== "KeyX") return;
+      if (e.target.closest?.("input,select,textarea,[contenteditable=true]")) return;
+      const dialog = document.querySelector("dialog[open]");
       const action = keys[e.code];
+      if (dialog && !(action === "menu" || (dialog.id === "course-dialog" &&
+          ["ready", "arm"].includes(action) && dialog.querySelector("#party-roster"))))
+        return;
       if (!action || e.ctrlKey || e.metaKey || e.altKey) return;
       e.preventDefault();
       if (!e.repeat) this.press(e.code, action);
@@ -92,6 +98,7 @@ export class Input {
     this.held.clear();
   }
   press(id, action) {
+    if (!this.enabled(action)) return;
     this.held.set(id, action);
     this.actions[action]?.();
   }
@@ -103,7 +110,8 @@ export class Input {
       right: false,
       handbrake: false,
     };
-    for (const action of this.held.values()) state[action] = true;
+    for (const action of this.held.values())
+      if (this.enabled(action)) state[action] = true;
     return state;
   }
 }

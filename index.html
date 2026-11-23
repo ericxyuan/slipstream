@@ -79,6 +79,7 @@
         <div id="party-hud" hidden></div>
         <div id="race-info" hidden>
           <span id="race-progress"></span>
+          <button id="race-ready" class="action-button" hidden>Ready · V</button>
           <button id="race-action" class="action-button">Start race</button>
         </div>
       </div>
@@ -89,49 +90,22 @@
       <button class="camera" data-control="camera" aria-label="Change camera">
         <svg><use href="#cam" /></svg><span id="camera">Chase</span><kbd>C</kbd>
       </button>
-      <aside class="minimap" aria-label="Course minimap">
-        <div class="map-caption"><span>Course map</span><span>N ↑</span></div>
-        <svg
-          id="minimap"
-          role="img"
-          aria-label="Redrock Basin road loop and current vehicle position"
-        ></svg>
-      </aside>
-      <section class="telemetry" aria-label="Input telemetry">
-        <div class="panel-title"><i></i>Input telemetry</div>
-        <div class="meter">
-          <span>Throttle</span>
-          <div class="segments" id="throttle"></div>
-        </div>
-        <div class="meter">
-          <span>Brake</span>
-          <div class="segments" id="brake"></div>
-        </div>
-        <div class="meter">
-          <span>Boost</span><meter id="boost-level" max="1" value="0"></meter>
-        </div>
-        <div class="meter">
-          <span>Regen</span><meter id="regen-level" max="4" value="0"></meter>
-        </div>
-        <div class="meter">
-          <span>Handbrake</span
-          ><meter id="hand-level" max="1" value="0"></meter>
-        </div>
-        <div class="meter">
-          <span>Steer</span>
-          <div class="steering-readout">
-            <span>L</span>
-            <div class="steering-track"><i id="steering"></i></div>
-            <span>R</span>
+      <section class="drive-hud" aria-label="Driving instruments">
+        <div class="drive-inputs">
+          <div class="axis-row">
+            <div class="axis-labels"><span>Brake</span><span>Throttle</span></div>
+            <div class="input-axis" id="pedal-axis"><i></i><b></b></div>
           </div>
+          <div class="axis-row">
+            <div class="axis-labels"><span>L</span><span>Steer</span><span>R</span></div>
+            <div class="input-axis" id="steer-axis"><i></i><b></b></div>
+          </div>
+          <div class="acceleration" title="Magnitude of lateral and vertical acceleration">
+            <span>Acceleration</span><output id="acceleration">0.00 m/s² · 0.00 g</output>
+          </div>
+          <div class="drive-lamps"><span id="boost-lamp">Boost</span><span id="hand-lamp">Handbrake</span></div>
         </div>
-      </section>
-      <section class="accel-panel">
-        <div class="panel-title">Acceleration</div>
-        <small>Longitudinal</small><output id="long-accel"></output
-        ><small>Vertical</small><output id="vert-accel"></output>
-      </section>
-      <section class="cluster" aria-label="Vehicle instruments">
+        <div class="instruments">
         <div class="speed-row">
           <div class="speed-group">
             <strong id="speed" aria-label="Speed in kilometres per hour"
@@ -141,7 +115,20 @@
           <div class="gear-group"><b id="gear">N</b><small>Gear</small></div>
         </div>
         <div id="motion-info"></div>
-        <div class="revbar" aria-hidden="true"></div>
+          <div class="shift-gauge" aria-label="Shift lights with brake and regeneration levels">
+            <div class="shift-back"><i id="brake-level"></i><i id="regen-level"></i></div>
+            <div class="revbar" aria-hidden="true"></div>
+          </div>
+          <div class="shift-legend"><span>Brake</span><span id="regen-label">Regen</span></div>
+        </div>
+      <aside class="minimap" aria-label="Course minimap">
+        <div class="map-caption"><span>Course map</span><span>N ↑</span></div>
+        <svg
+          id="minimap"
+          role="img"
+          aria-label="Redrock Basin road loop and current vehicle position"
+        ></svg>
+      </aside>
       </section>
       <div class="flight-controls" hidden>
         <button data-control="rise"><kbd>E</kbd> Rise</button

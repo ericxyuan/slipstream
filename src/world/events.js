@@ -26,6 +26,18 @@ export const defaults = {
   countdown: 3,
   sections: "prepared,gravel,wet",
 };
+export function eventOptions(map, format, surface, multiplayer) {
+  const racing = format !== "free", drag = format === "drag", sky = map === "sky";
+  return {
+    surface: !sky, sections: !sky && surface === "custom",
+    route: racing && !drag && map !== "drag" && (map === "city" || format !== "circuit"),
+    reverse: racing, distance: drag || map === "drag",
+    start: racing && !drag, end: ["sprint", "trial"].includes(format),
+    checkpoints: racing && !drag, laps: format === "circuit",
+    vehicleClass: !sky, rules: racing, players: multiplayer,
+    collision: multiplayer, dnf: racing && multiplayer, countdown: racing,
+  };
+}
 export function validate(raw = {}) {
   const c = { ...defaults, ...raw };
   if (
@@ -45,13 +57,16 @@ export function validate(raw = {}) {
     ["players", 1, 12],
     ["start", 0, 90],
     ["end", 10, 100],
-    ["checkpoints", 2, 32],
-    ["distance", 50, 2000],
+    ["checkpoints", c.format === "drag" ? 1 : 2, 32],
     ["countdown", 1, 15],
   ]) {
     if (!Number.isInteger(c[key]) || c[key] < min || c[key] > max)
       throw Error("Invalid " + key + ".");
   }
+  if (!Number.isSafeInteger(c.distance) || c.distance < 1)
+    throw Error("Enter a positive whole distance in metres.");
+  if (c.format === "drag") Object.assign(c, { start: 0, end: 100, route: "main", checkpoints: 1 });
+  if (c.format === "circuit") c.end = 100;
   if (!["main", "short", "outer"].includes(c.route))
     throw Error("Unknown route preset.");
   if (c.end <= c.start) throw Error("Finish must follow the start.");
@@ -73,10 +88,15 @@ export function makeCourse(raw, count = 1, lane = 0) {
   const c = courseLayout(map, config.distance);
   const stripWidth = Math.max(12, count * 4.5 + 3);
   if (map === "city") c.bounds = [-166, 286, -286, 246];
-  if (map === "drag") {
+  if (format === "drag" || map === "drag") {
+    // Keep the straight clear of permanent scenery, including a twelve-car grid.
+    const x = { city: 320, desert: 275, drag: 0, sky: 0 }[map];
+    c.stripX = x;
+    c.length = config.distance;
     c.lanes = count;
     c.stripWidth = stripWidth;
-    c.bounds = [-stripWidth / 2, stripWidth / 2, -config.distance - 100, 22];
+    const edge = map === "sky" ? Math.max(40, stripWidth / 2) : stripWidth / 2;
+    c.bounds = [x - edge, x + edge, -c.length - 100, 100];
   }
   let p = c.points.map((v) => ({ x: v.x, y: v.y ?? 0, z: v.z }));
   const network = [...p];
@@ -102,15 +122,9 @@ export function makeCourse(raw, count = 1, lane = 0) {
     p = p.slice(0, Math.max(2, Math.ceil(p.length * 0.62)));
   if (map === "sky") p[0].y = 8;
   if (format === "drag" && map !== "drag") {
-    const distance = Math.min(
-      config.distance,
-      { city: 510, desert: 95, sky: 660 }[map],
-    );
-    const z = { city: 235, desert: 79, sky: 0 }[map];
-    p = [
-      { x: 0, y: map === "sky" ? 8 : 0, z },
-      { x: 0, y: map === "sky" ? 8 : 0, z: z - distance },
-    ];
+    const x = c.stripX, y = map === "sky" ? 8 : 0;
+    p = [{ x, y, z: 0 }, { x, y, z: -c.length }];
+    c.points = p;
   } else if (format === "circuit" && !c.closed) {
     p = [
       ...p,
@@ -143,7 +157,7 @@ export function makeCourse(raw, count = 1, lane = 0) {
       z: a.z + (b.z - a.z) * t,
       dx: (b.x - a.x) / span,
       dz: (b.z - a.z) / span,
-      radius: map === "sky" ? 6 : Math.max(9, stripWidth / 2 + 1),
+      radius: map === "sky" && format !== "drag" ? 6 : Math.max(9, stripWidth / 2 + 1),
     };
   }
   const from = (full * config.start) / 100,
@@ -163,8 +177,9 @@ export function makeCourse(raw, count = 1, lane = 0) {
     sample(1),
   ];
   const matrix =
-    format === "drag" && map === "drag" ? count : Math.min(count, 2);
-  const a = at(from + 0.001),
+    format === "drag" ? count : Math.min(count, 2);
+  const direction = at(from + 0.001);
+  const a = { ...sample(0), dx: direction.dx, dz: direction.dz },
     offset =
       ((lane % matrix) - (matrix - 1) / 2) * (format === "drag" ? 4.5 : 3.2);
   const back =

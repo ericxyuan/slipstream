@@ -18,3 +18,9 @@ export function eligible(v, c) {
       return true;
   }
 }
+
+export function supportsControl(vehicle, action) {
+  if (action === "jump") return !!vehicle.jump;
+  if (action === "rise" || action === "lower") return !!vehicle.flying;
+  return true;
+}

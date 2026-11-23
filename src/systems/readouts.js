@@ -1,3 +1,7 @@
+export function combinedAcceleration(state) {
+  const magnitude = Math.hypot(state.lateralAccel, state.verticalAccel);
+  return magnitude.toFixed(2) + " m/s² · " + (magnitude / 9.80665).toFixed(2) + " g";
+}
 export const accelerationText = (n) =>
   (n >= 0 ? "+" : "") +
   n.toFixed(2) +

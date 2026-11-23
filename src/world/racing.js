@@ -71,62 +71,57 @@ export function buildStrip(group, course) {
   const width = course.stripWidth ?? 20,
     edge = width / 2;
   const texture = grainTexture(218, 30, 42);
-  texture.repeat.set(5, (length + 130) / 5);
-  const strip = paint(surface.color, {
-    map: texture,
-    roughness: surface.grip < 0.75 ? 0.5 : 0.92,
-  });
-  const concrete = paint("#a5a69e"),
-    orange = paint("#ee7838"),
-    white = paint("#f4efe3");
-  const steel = paint("#44515b"),
-    tires = paint("#252b2d");
-  const depth = length + 130,
-    mid = 25 - depth / 2;
-  box(group, paint("#b2a489"), 0, -0.55, mid, 1400, 1, depth + 1000);
-  box(group, strip, 0, -0.04, mid, width + 2, 0.12, depth);
+  const span = 144;
+  texture.repeat.set(5, span / 5);
+  const strip = paint(surface.color, { map: texture, roughness: surface.grip < 0.75 ? 0.5 : 0.92 });
+  const concrete = paint("#a5a69e"), orange = paint("#ee7838"), white = paint("#f4efe3"),
+    steel = paint("#44515b"), tires = paint("#252b2d");
+  const section = new T.Group();
+  box(section, paint("#b2a489"), 0, -0.6, -span / 2, 1400, 1, span);
+  box(section, strip, 0, -0.04, -span / 2, width + 2, 0.12, span);
   for (const side of [-1, 1]) {
-    box(group, white, side * (edge - 0.3), 0.034, mid, 0.15, 0.015, depth);
-    box(group, concrete, side * (edge + 1.1), 0.48, mid, 0.65, 1, depth);
-    for (let d = 0; d <= length + 80; d += 16)
-      box(group, orange, side * (edge + 0.75), 0.52, -d, 0.09, 0.45, 3.2);
-    for (let d = 4; d < length; d += 75) {
-      box(group, steel, side * (edge + 5), 5, -d, 0.22, 10, 0.22);
-      box(group, white, side * (edge + 4.3), 10, -d, 1.8, 0.25, 0.6);
+    box(section, white, side * (edge - 0.3), 0.034, -span / 2, 0.15, 0.015, span);
+    box(section, concrete, side * (edge + 1.1), 0.48, -span / 2, 0.65, 1, span);
+    for (let d = 8; d < span; d += 16)
+      box(section, orange, side * (edge + 0.75), 0.52, -d, 0.09, 0.45, 3.2);
+    for (let d = 4; d < span; d += 72) {
+      box(section, steel, side * (edge + 5), 5, -d, 0.22, 10, 0.22);
+      box(section, white, side * (edge + 4.3), 10, -d, 1.8, 0.25, 0.6);
     }
     for (let row = 0; row < 5; row++)
-      box(
-        group,
-        row % 2 ? steel : concrete,
-        side * (edge + 10 + row * 1.5),
-        0.35 + row * 0.6,
-        -13,
-        1.7,
-        0.6 + row * 0.48,
-        52,
-      );
+      box(group, row % 2 ? steel : concrete, side * (edge + 10 + row * 1.5),
+        0.35 + row * 0.6, -13, 1.7, 0.6 + row * 0.48, 52);
   }
-  box(group, white, 0, 0.034, 0, width, 0.02, 0.32);
-  for (let i = 1; i < (course.lanes ?? 1); i++)
-    for (let d = 2; d < length; d += 9)
-      box(
-        group,
-        white,
-        (i - course.lanes / 2) * 4.5,
-        0.034,
-        -d,
-        0.13,
-        0.015,
-        4,
-      );
-  checkeredLine(group, -length, width);
+  for (let i = 1; i < course.lanes; i++)
+    for (let d = 3; d < span; d += 9)
+      box(section, white, (i - course.lanes / 2) * 4.5, 0.034, -d, 0.13, 0.015, 4);
+  batchStatic(section);
+  const finish = course.format === "drag" && course.config.reverse ? 0 : -length;
+  const facing = finish === 0 ? -1 : 1;
+  checkeredLine(group, finish, width);
   for (const side of [-1, 1])
-    box(group, steel, side * (edge + 1.6), 4.4, -length, 0.8, 8.8, 1);
-  box(group, tires, 0, 8.1, -length, width + 4, 1.8, 1);
-  sign(group, "FINISH", 0, 8.12, -length + 0.52, 10, 1.6);
-  for (let d = 100; d < length; d += 100)
-    sign(group, d + " m", edge + 0.9, 1.65, -d, 3.6, 1, "#ffbf76");
-  batchStatic(group);
+    box(group, steel, side * (edge + 1.6), 4.4, finish, 0.8, 8.8, 1);
+  box(group, tires, 0, 8.1, finish, width + 4, 1.8, 1);
+  sign(group, "FINISH", 0, 8.12, finish + facing * 0.52, 10, 1.6).rotation.y = facing < 0 ? Math.PI : 0;
+  const interval = 100 * Math.max(1, Math.ceil(length / 2000));
+  for (let d = interval; d < length; d += interval)
+    sign(group, d + " m", edge + 0.9, 1.65, facing > 0 ? -d : -length + d, 3.6, 1, "#ffbf76").rotation.y = facing < 0 ? Math.PI : 0;
+  // Share geometry across just the sections within camera range, even on very long strips.
+  const last = Math.ceil((length + 100) / span) - 1;
+  const chunks = Array.from({ length: Math.min(last + 2, 23) }, (_, i) => {
+    const chunk = i ? section.clone() : section;
+    group.add(chunk);
+    return chunk;
+  });
+  let previous;
+  group.userData.followStrip = (z) => {
+    const first = Math.max(-1, Math.min(last - chunks.length + 1, Math.floor(-z / span) - 11));
+    if (first === previous) return;
+    chunks.forEach((chunk, i) => { chunk.position.z = -(first + i) * span; });
+    previous = first;
+  };
+  group.userData.followStrip(course.spawn?.z ?? 0);
+  group.position.x = course.stripX ?? 0;
   return [];
 }
 
@@ -375,7 +370,7 @@ export function buildCity(group, course) {
   }
   // Painted chevrons trace the racing line and point around each junction.
   const guidance =
-    course?.format === "free"
+    ["free", "drag"].includes(course?.format)
       ? []
       : (course?.route ?? cityCorners.map(([x, z]) => ({ x, z })));
   guidance.slice(1).forEach((end, i) => {

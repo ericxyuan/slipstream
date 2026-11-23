@@ -1,4 +1,4 @@
-import { eligible } from "./vehicle/classes.js";
+import { eligible, supportsControl } from "./vehicle/classes.js";
 import "./style.css";
 import * as T from "three";
 import { makeCourse, defaults } from "./world/events.js";
@@ -58,6 +58,7 @@ function start() {
     ui,
     props = [],
     markers = [],
+    stripScenery,
     snap = true,
     acc = 0,
     last = null,
@@ -190,6 +191,12 @@ function start() {
     props = makeProps(next);
     overlay = new T.Group();
     scene.add(overlay);
+    stripScenery = next.id === "drag" ? world : null;
+    if (next.format === "drag" && ["city", "desert"].includes(next.id)) {
+      stripScenery = new T.Group();
+      buildStrip(stripScenery, next);
+      overlay.add(stripScenery);
+    }
     markers = propMeshes(overlay, props);
     surfaceOverlay(overlay, next);
     startFinish(overlay, next);
@@ -294,6 +301,9 @@ function start() {
     next: () => cycle(1),
     reset: restart,
     menu: () => ui.toggle(),
+    configure: () => ui.toggle("Race Configuration"),
+    partyMenu: () => ui.toggle("Party Management"),
+    ready: () => ui.ready(),
     arm: () => ui.arm(),
     cancel: () => {
       if (race.phase === "countdown") ui.arm();
@@ -302,7 +312,7 @@ function start() {
       hud.camera.textContent = rig.cycle();
       snap = true;
     },
-  });
+  }, action => supportsControl(vehicles[fleet.index], action));
   const quality = (v) => {
     renderer.setPixelRatio(Math.min(devicePixelRatio, v === "low" ? 1 : 1.65));
     renderer.shadowMap.enabled = v !== "low";
@@ -425,6 +435,7 @@ function start() {
     snap = false;
     hud.update(state, controls, elapsed);
     audio.update("local", state, spec, state, surface, course.id);
+    stripScenery?.userData.followStrip(state.z);
     draw(rig.camera, state);
   }
   frameId = requestAnimationFrame(frame);

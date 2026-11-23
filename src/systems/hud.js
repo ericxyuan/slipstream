@@ -1,4 +1,4 @@
-import { accelerationText, motionNames } from "./readouts.js";
+import { combinedAcceleration, motionNames } from "./readouts.js";
 import { Minimap } from "./minimap.js";
 import { gear } from "../vehicle/physics.js";
 const byId = (id) => document.getElementById(id);
@@ -7,17 +7,20 @@ function segments(el, count) {
     el.appendChild(document.createElement("i")),
   );
 }
+function setAxis(el, left, right) {
+  el.style.setProperty("--left", (left * 50).toFixed(1) + "%");
+  el.style.setProperty("--right", (right * 50).toFixed(1) + "%");
+}
 export class Hud {
   constructor() {
     this.map = new Minimap(byId("minimap"));
-    this.steering = byId("steering");
+    this.pedals = byId("pedal-axis");
+    this.steer = byId("steer-axis");
     this.altitude = byId("altitude");
     this.speed = byId("speed");
     this.gear = byId("gear");
     this.fps = byId("fps");
     this.camera = byId("camera");
-    this.throttle = segments(byId("throttle"), 10);
-    this.brake = segments(byId("brake"), 10);
     this.revs = segments(document.querySelector(".revbar"), 25);
     this.revs.slice(-5).forEach((e) => e.classList.add("hot"));
     this.buttons = [...document.querySelectorAll("footer button")];
@@ -30,6 +33,8 @@ export class Hud {
     byId("vehicle-name").textContent = spec.name;
     byId("vehicle-plate").textContent = spec.plate;
     document.querySelector(".flight-controls").hidden = !spec.flying;
+    document.querySelector('[data-control="jump"]').hidden = !spec.jump;
+    byId("regen-label").hidden = byId("regen-level").hidden = !spec.electric;
     this.flying = spec.flying;
   }
   update(s, input, dt) {
@@ -47,21 +52,13 @@ export class Hud {
       this.lastSpeed = n;
     }
     if (this.gear.textContent !== g) this.gear.textContent = g;
-    this.throttle.forEach((e, i) =>
-      e.classList.toggle(
-        "on",
-        i < Math.round(s.throttle * this.throttle.length),
-      ),
-    );
-    this.brake.forEach((e, i) =>
-      e.classList.toggle("on", i < Math.round(s.brake * this.brake.length)),
-    );
-    this.steering.style.left = (50 - s.steeringInput * 50).toFixed(1) + "%";
-    byId("long-accel").textContent = accelerationText(s.acceleration);
-    byId("vert-accel").textContent = accelerationText(s.verticalAccel);
-    byId("regen-level").value = s.regen;
-    byId("boost-level").value = s.boost;
-    byId("hand-level").value = input.handbrake ? 1 : 0;
+    setAxis(this.pedals, s.brake, s.throttle);
+    setAxis(this.steer, Math.max(0, s.steeringInput), Math.max(0, -s.steeringInput));
+    byId("acceleration").value = combinedAcceleration(s);
+    byId("regen-level").style.transform = "scaleX(" + s.regen / 4 + ")";
+    byId("brake-level").style.transform = "scaleX(" + s.brake + ")";
+    byId("boost-lamp").classList.toggle("on", s.boost > 0.1);
+    byId("hand-lamp").classList.toggle("on", !!input.handbrake);
     this.speed.classList.toggle("boosting", s.boost > 0.1);
     byId("motion-info").textContent =
       motionNames[Math.round(s.mode)] +
