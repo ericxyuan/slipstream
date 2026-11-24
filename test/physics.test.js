@@ -194,25 +194,22 @@ test("lift, hover and landing ramp vertical velocity and settle without oscillat
   assert.equal(car.state.verticalSpeed, 0);
 });
 
-test("road steering maintains turn-in and held turn rate across racing speeds", () => {
+test("road steering tapers gently from 45 to 200 km/h and holds at higher speeds", () => {
   for (const spec of vehicles) {
-    function turn(kph, controls) {
+    function turnDegrees(kph, controls = { left: true }) {
       const car = new VehiclePhysics([]);
       car.configure(spec);
       car.vz = -kph / 3.6;
-      drive(car, 0.25, controls);
-      const initial = car.state.heading;
-      drive(car, 0.75, controls);
-      return [initial, car.yawRate];
+      drive(car, 0.5, controls);
+      return car.state.heading * 180 / Math.PI;
     }
-    const [tap, rate] = turn(60, {left: true});
-    assert.ok(tap > 0 && rate > 0);
-    for (const kph of [100, 200, spec.top]) {
-      const [left, held] = turn(kph, {left: true});
-      const [right] = turn(kph, {right: true});
-      assert.ok(Math.abs(left / tap - 1) < 0.01, spec.id + " turn-in at " + kph);
-      assert.ok(Math.abs(held / rate - 1) < 0.01, spec.id + " held turn at " + kph);
-      assert.ok(Math.abs(left + right) < 0.001);
-    }
+    const low = turnDegrees(45);
+    const middle = turnDegrees(100);
+    const high = turnDegrees(200);
+    assert.ok(low > middle && middle > high, spec.id);
+    assert.ok(Math.abs(high / low - 0.825) < 0.01, spec.id);
+    assert.ok(Math.abs(turnDegrees(spec.top) - high) < 0.1, spec.id);
+    assert.ok(Math.abs(turnDegrees(100, { right: true }) + middle) < 0.01, spec.id);
+    if (spec.id === "sport") assert.ok(Math.abs(low - high - 8) < 0.25);
   }
 });

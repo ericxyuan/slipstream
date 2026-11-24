@@ -137,11 +137,14 @@ export class VehiclePhysics {
       h.steerResponse * (steering ? 1 : 1.35),
       dt,
     );
-    // Wheel lock sets the turning radius at parking speeds. At race speeds,
-    // compensate for distance travelled so equal key presses give equal yaw.
+    // Between 45 and 200 km/h, ease out up to 17.5% of each car's road yaw.
+    // This takes about 8 degrees off a half-second sports coupe turn on asphalt.
+    const roadSpeedKph = Math.abs(speed) * 3.6;
+    const speedFraction = clamp((roadSpeedKph - 45) / (200 - 45), 0, 1);
+    const turnRate = h.turnRate * (1 - 0.175 * ease(speedFraction));
     const curvature = s.steeringInput * Math.min(
       Math.tan(h.steeringLock) / this.spec.wheelbase,
-      (h.turnRate * (surface?.grip ?? 1)) / Math.max(0.01, Math.abs(speed)),
+      (turnRate * (surface?.grip ?? 1)) / Math.max(0.01, Math.abs(speed)),
     );
     s.steer = Math.atan(curvature * this.spec.wheelbase) * (1 - s.airborne);
     const roadYaw = curvature * speed * (input.handbrake ? 1.18 : 1);
