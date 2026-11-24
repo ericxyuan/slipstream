@@ -1,3 +1,4 @@
+import { inTidalPool, onCoastRoad } from "./coast.js";
 // Longitudinal grip is the maximum tyre acceleration in metres per second squared.
 const definitions = [
   ["prepared", "Smooth asphalt", 65, 1.12, 0.9, "#45454a"],
@@ -23,6 +24,8 @@ export const surfaces = Object.fromEntries(
   ]),
 );
 export function surfaceAt(course, x, z) {
+  if (course?.id === "coast" && course.format !== "drag" && course.config.surface === "original")
+    return onCoastRoad(x, z) ? surfaces.asphalt : inTidalPool(x, z) ? surfaces.mud : surfaces.grass;
   if (
     course?.config?.surface === "original" &&
     course.id === "desert" && course.format !== "drag" &&

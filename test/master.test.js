@@ -17,7 +17,7 @@ function vehicle(
   return car;
 }
 test("each map offers finite routes, a directed start, and free drive", () => {
-  for (const map of ["city", "sky", "desert", "drag"])
+  for (const map of ["city", "sky", "desert", "drag", "coast"])
     for (const format of Object.keys(formats))
       for (const reverse of [true, false]) {
         const c = makeCourse({ map, format, reverse, start: 10, end: 90 });
@@ -179,7 +179,7 @@ test("class eligibility and route validation use the same rules as the host", as
 });
 
 test("drag length sets the actual finish and bounds in every map and direction", () => {
-  for (const map of ["city", "desert", "sky", "drag"])
+  for (const map of ["city", "desert", "sky", "drag", "coast"])
     for (const reverse of [true, false])
       for (const distance of [1, 402, 100_000, 1_000_000]) {
         const c = makeCourse({ map, format: "drag", distance, reverse, start: 10, end: 70 }, 12, 11);

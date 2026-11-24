@@ -96,7 +96,7 @@ export class Party {
           ? citySolids()
           : course.id === "desert"
             ? desertColliders
-            : [],
+            : course.obstacles ?? [],
       );
       p.car = car;
       p.race = new Race(course);

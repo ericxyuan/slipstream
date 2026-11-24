@@ -30,7 +30,7 @@ export function eventOptions(map, format, surface, multiplayer) {
   const racing = format !== "free", drag = format === "drag", sky = map === "sky";
   return {
     surface: !sky, sections: !sky && surface === "custom",
-    route: racing && !drag && map !== "drag" && (map === "city" || format !== "circuit"),
+    route: racing && !drag && map !== "coast" && map !== "drag" && (map === "city" || format !== "circuit"),
     reverse: racing, distance: drag || map === "drag",
     start: racing && !drag, end: ["sprint", "trial"].includes(format),
     checkpoints: racing && !drag, laps: format === "circuit",
@@ -79,6 +79,7 @@ export function validate(raw = {}) {
   if (c.map === "sky" && ["original", "heavy"].includes(c.vehicleClass))
     throw Error("Skyway requires a flight-capable Roadster.");
   c.reverse = c.reverse === true;
+  if (c.map === "coast") c.route = "main";
   if (c.format !== "circuit") c.laps = 1;
   return c;
 }
@@ -90,7 +91,7 @@ export function makeCourse(raw, count = 1, lane = 0) {
   if (map === "city") c.bounds = [-166, 286, -286, 246];
   if (format === "drag" || map === "drag") {
     // Keep the straight clear of permanent scenery, including a twelve-car grid.
-    const x = { city: 320, desert: 275, drag: 0, sky: 0 }[map];
+    const x = { city: 320, coast: 280, desert: 275, drag: 0, sky: 0 }[map];
     c.stripX = x;
     c.length = config.distance;
     c.lanes = count;
@@ -98,9 +99,9 @@ export function makeCourse(raw, count = 1, lane = 0) {
     const edge = map === "sky" ? Math.max(40, stripWidth / 2) : stripWidth / 2;
     c.bounds = [x - edge, x + edge, -c.length - 100, 100];
   }
-  let p = c.points.map((v) => ({ x: v.x, y: v.y ?? 0, z: v.z }));
+  let p = c.points.map((v) => ({ ...v, y: v.y ?? 0 }));
   const network = [...p];
-  if (map === "desert") p.pop();
+  if (map === "desert" || map === "coast") p.pop();
   if (map === "city" && config.route !== "main") {
     const coords =
       config.route === "outer"
@@ -151,7 +152,7 @@ export function makeCourse(raw, count = 1, lane = 0) {
       b = p[i],
       span = lengths[i] - lengths[i - 1] || 1,
       t = (d - lengths[i - 1]) / span;
-    return {
+    const gate = {
       x: a.x + (b.x - a.x) * t,
       y: a.y + (b.y - a.y) * t,
       z: a.z + (b.z - a.z) * t,
@@ -159,6 +160,13 @@ export function makeCourse(raw, count = 1, lane = 0) {
       dz: (b.z - a.z) / span,
       radius: map === "sky" && format !== "drag" ? 6 : Math.max(9, stripWidth / 2 + 1),
     };
+    if (a.alternate && b.alternate) {
+      const u = a.alternate, v = b.alternate;
+      const len = Math.hypot(v.x - u.x, v.z - u.z);
+      gate.alternate = { x: u.x + (v.x - u.x)*t, y: 0, z: u.z + (v.z - u.z)*t,
+        dx: (v.x - u.x)/len, dz: (v.z - u.z)/len, radius: gate.radius };
+    }
+    return gate;
   }
   const from = (full * config.start) / 100,
     distance = format === "circuit" ? full : (full * config.end) / 100 - from;
@@ -216,7 +224,7 @@ export function makeCourse(raw, count = 1, lane = 0) {
   for (let i = 1; i < sorted.length; i++) {
     if (sorted[i] - sorted[i - 1] < 1e-7) continue;
     const mid = (sorted[i] + sorted[i - 1]) / 2;
-    sections.push({
+    const section = {
       a: sample(sorted[i - 1]),
       b: sample(sorted[i]),
       surface: segmented
@@ -226,7 +234,10 @@ export function makeCourse(raw, count = 1, lane = 0) {
             ]
           ]
         : surface,
-    });
+    };
+    sections.push(section);
+    if (section.a.alternate && section.b.alternate)
+      sections.push({ a: section.a.alternate, b: section.b.alternate, surface: section.surface });
   }
   return {
     ...c,

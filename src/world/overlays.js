@@ -127,7 +127,7 @@ export function startFinish(group, course) {
   if (course.format === "free" || course.id === "sky") return;
   const white = paint("#f8f4dd"),
     black = paint("#292c31");
-  for (const gate of [course.startLine, course.gates.at(-1)]) {
+  for (const gate of [course.startLine, course.gates.at(-1)].flatMap(g => g?.alternate ? [g, g.alternate] : [g])) {
     if (!gate) continue;
     const stripe = new T.Group();
     group.add(stripe);

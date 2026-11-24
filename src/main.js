@@ -1,3 +1,5 @@
+import { buildCoast } from "./world/coast-scene.js";
+import { nearestGate } from "./world/courses.js";
 import { eligible, supportsControl } from "./vehicle/classes.js";
 import "./style.css";
 import * as T from "three";
@@ -173,7 +175,7 @@ function start() {
     const obs =
       next.id === "desert"
         ? rocks
-        : { city: buildCity, sky: buildSky, drag: buildStrip }[next.id](
+        : { coast: buildCoast, city: buildCity, sky: buildSky, drag: buildStrip }[next.id](
             world,
             next,
           );
@@ -192,7 +194,7 @@ function start() {
     overlay = new T.Group();
     scene.add(overlay);
     stripScenery = next.id === "drag" ? world : null;
-    if (next.format === "drag" && ["city", "desert"].includes(next.id)) {
+    if (next.format === "drag" && ["city", "desert", "coast"].includes(next.id)) {
       stripScenery = new T.Group();
       buildStrip(stripScenery, next);
       overlay.add(stripScenery);
@@ -405,7 +407,7 @@ function start() {
         race.green - party.state.server - (now - party.received) / 1000,
       );
     const roll = physics.sample(acc / STEP, state),
-      g = course.gates[race.next];
+      g = nearestGate(course.gates[race.next], state);
     if (g !== lastGate || snap) {
       hud.map.target(g);
       goal.visible = !!g && course.format !== "free";

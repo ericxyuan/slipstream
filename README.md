@@ -1,6 +1,6 @@
 # SlipStream
 
-A browser driving game built with Three.js, Vite and a shared 120 Hz vehicle simulation. Four environments support solo driving and party races. Cloudflare serves the compiled game and coordinates each party in a separate Durable Object.
+A browser driving game built with Three.js, Vite and a shared 120 Hz vehicle simulation. Five environments support solo driving and party races. Cloudflare serves the compiled game and coordinates each party in a separate Durable Object.
 
 ## Run
 
@@ -22,6 +22,8 @@ Open the URL printed by the chosen development server. WebGL 2 is required. Soun
 Use WASD or the arrow keys to drive, Space for the handbrake and Shift for boost. Drag with the left mouse button to look around. C recenters an adjusted camera before cycling views. E and Q control Roadster lift. J preloads and releases the U9 suspension once per press. R resets solo driving. Scroll advances through the three vehicles selected in Active Rotation.
 
 X opens the menu. Maps enters free drive. Race Configuration chooses the map, route, direction, start and finish, gate count, surface sections, lap count, countdown, collisions, DNF timeout and competition rules. Named presets stay in the browser. The course preview uses the same path as the gate detector. Drag races accept a positive whole distance in metres on every map. Ground strips reuse nearby road sections as you drive. Circuit starts wrap around the closed route. G opens race configuration, P opens party management, and V toggles readiness in a race lobby. F starts a solo race or a ready party as host, Esc cancels its countdown, and early propulsion input records a false start. Open menus pause solo driving. Party clocks and other drivers continue.
+
+Brinewater Causeway is a coastal loop with three signed forks. Lantern Point, Saltworks and Reedbank each lead back to the loop. Either road counts toward race checkpoints in both directions.
 
 Create or join a four-letter code under Multiplayer. The host sets the event. Drivers choose their vehicle and mark themselves ready. The host starts the countdown after everyone is ready. Player input travels over WebSockets. The server runs movement, checks each directed gate and resolves vehicle and prop impulses. Results include valid finishes, false starts and DNF. A disconnected browser may reconnect with its session token during the 30-second grace period. Empty rooms expire. Up to twelve drivers are supported per party.
 

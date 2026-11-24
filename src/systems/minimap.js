@@ -96,6 +96,8 @@ export class Minimap {
         },
         svg,
       );
+    for (const branch of course.branches ?? [])
+      element("path", { d: path(branch.points), class: "map-road", style: "stroke-width:6" }, svg);
     if (course.format !== "free")
       element(
         "path",
@@ -106,7 +108,7 @@ export class Minimap {
         },
         svg,
       );
-    for (const g of course.gates)
+    for (const g of course.gates.flatMap(g => g.alternate ? [g, g.alternate] : [g]))
       element("circle", { cx: g.x, cy: g.z, r: 1.7, fill: "#eee" }, svg);
     if (course.format !== "free" && course.startLine) {
       for (const [g, color] of [

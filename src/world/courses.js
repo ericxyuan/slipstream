@@ -1,3 +1,4 @@
+import { coastLoop, coastBranches, coastSolids } from "./coast.js";
 import { road } from "./road.js";
 
 import { surfaces } from "./surfaces.js";
@@ -7,6 +8,11 @@ export const courses = {
     name: "Redrock Basin",
     type: "Free drive",
     detail: "Explore the desert test loop.",
+  },
+  coast: {
+    name: "Brinewater Causeway",
+    type: "Coastal loop",
+    detail: "Follow the tide road past Lantern Point, the saltworks and Reedbank marsh.",
   },
   drag: {
     name: "Meridian Strip",
@@ -65,6 +71,8 @@ const skyGates = skyPoints.map(([x, y, z], i) => {
 
 export function courseLayout(id, length = 402, surface = "prepared") {
   const layout = { id, ...courses[id], gates: [], closed: false };
+  if (id === "coast")
+    return { ...layout, points: coastLoop, branches: coastBranches, obstacles: coastSolids, closed: true, bounds: [-215, 202, -244, 185] };
   if (id === "desert")
     return {
       ...layout,
@@ -105,6 +113,10 @@ export function courseLayout(id, length = 402, surface = "prepared") {
 
 // Fraction of this physics step at which the car crossed the gate in order.
 export function crossing(gate, before, after, airborne) {
+  if (gate.alternate) {
+    const other = crossing(gate.alternate, before, after, airborne);
+    if (other !== null) return other;
+  }
   const distance = (p) => (p.x - gate.x) * gate.dx + (p.z - gate.z) * gate.dz;
   const a = distance(before),
     b = distance(after);
@@ -116,4 +128,10 @@ export function crossing(gate, before, after, airborne) {
     ? before.altitude + (after.altitude - before.altitude) * fraction - gate.y
     : 0;
   return Math.hypot(x, height, z) <= gate.radius ? fraction : null;
+}
+
+export function nearestGate(gate, state) {
+  if (!gate?.alternate) return gate;
+  const d = g => (g.x - state.x) ** 2 + (g.z - state.z) ** 2;
+  return d(gate.alternate) < d(gate) ? gate.alternate : gate;
 }

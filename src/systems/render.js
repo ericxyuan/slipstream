@@ -33,11 +33,11 @@ export function initRenderer(canvas) {
     scene,
     renderer,
     atmosphere(id) {
-      const tint = { desert: "#ffffff", drag: "#f0f5ff", city: "#bfd6ea", sky: "#d2e8ff" };
-      const fog = { desert: "#dabba1", drag: "#b6bfc5", city: "#a7b7c6", sky: "#c9e2f4" };
+      const tint = { coast: "#e3f5fb", desert: "#ffffff", drag: "#f0f5ff", city: "#bfd6ea", sky: "#d2e8ff" };
+      const fog = { coast: "#bbd3d3", desert: "#dabba1", drag: "#b6bfc5", city: "#a7b7c6", sky: "#c9e2f4" };
       sky.material.color.set(tint[id]);
       scene.fog.color.set(fog[id]);
-      const cool = id === "sky" || id === "city";
+      const cool = id === "sky" || id === "city" || id === "coast";
       ambient.groundColor.set(cool ? "#acbbca" : "#d3a080");
       sun.color.set(cool ? "#fff3e4" : "#ffe0b2");
       scene.fog.density = id === "drag" ? 0.0015 : 0.00255;

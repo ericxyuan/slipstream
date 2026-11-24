@@ -1,5 +1,5 @@
 import { classes, eligible } from "../vehicle/classes.js";
-import { courses, surfaces } from "../world/courses.js";
+import { courses, surfaces, nearestGate } from "../world/courses.js";
 import { defaults, eventOptions, formats, makeCourse } from "../world/events.js";
 import { vehicles } from "../vehicle/catalog.js";
 import { GaragePreview } from "./garage-preview.js";
@@ -392,20 +392,17 @@ export class RaceUI {
       try {
         const v = read(), course = makeCourse(v), pts = course.route;
         this.draft = v;
-        const xs = pts.map((p) => p.x),
-          zs = pts.map((p) => p.z),
-          x = Math.min(...xs),
-          z = Math.min(...zs),
-          w = Math.max(...xs) - x,
-          h = Math.max(...zs) - z,
+        const paths = [pts, ...(v.format === "drag" ? [] : (course.branches ?? []).map(b => b.points))];
+        const allPoints = paths.flat();
+        const xs = allPoints.map(p => p.x), zs = allPoints.map(p => p.z),
+          x = Math.min(...xs), z = Math.min(...zs),
+          w = Math.max(...xs) - x, h = Math.max(...zs) - z,
           pad = Math.max(w, h) * 0.06;
         el("route-preview").innerHTML =
-          '<svg viewBox="' +
-          [x - pad, z - pad, w + 2 * pad, h + 2 * pad].join(" ") +
-          '"><polyline fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" points="' +
-          pts.map((p) => p.x + "," + p.z).join(" ") +
-          '"/>' +
-          course.gates
+          '<svg viewBox="' + [x - pad, z - pad, w + 2 * pad, h + 2 * pad].join(" ") + '">' +
+          paths.map(line => '<polyline fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" points="' +
+            line.map(p => p.x + "," + p.z).join(" ") + '"/>').join("") +
+          course.gates.flatMap(g => g.alternate ? [g,g.alternate] : [g])
             .map(
               (g) =>
                 '<circle cx="' +
@@ -655,7 +652,7 @@ export class RaceUI {
       if (terminal(phase) && !this.api.party().id) this.finish();
       this.lastPhase = phase;
     }
-    const g = c.gates[r.next];
+    const g = nearestGate(c.gates[r.next], s);
     el("race-progress").textContent =
       phase === "running"
         ? (c.format === "circuit" ? "Lap " + r.lap + "/" + c.config.laps + " · " : "") +
