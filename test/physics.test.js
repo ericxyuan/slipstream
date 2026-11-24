@@ -193,3 +193,26 @@ test("lift, hover and landing ramp vertical velocity and settle without oscillat
   assert.equal(car.state.altitude, 0);
   assert.equal(car.state.verticalSpeed, 0);
 });
+
+test("road steering maintains turn-in and held turn rate across racing speeds", () => {
+  for (const spec of vehicles) {
+    function turn(kph, controls) {
+      const car = new VehiclePhysics([]);
+      car.configure(spec);
+      car.vz = -kph / 3.6;
+      drive(car, 0.25, controls);
+      const initial = car.state.heading;
+      drive(car, 0.75, controls);
+      return [initial, car.yawRate];
+    }
+    const [tap, rate] = turn(60, {left: true});
+    assert.ok(tap > 0 && rate > 0);
+    for (const kph of [100, 200, spec.top]) {
+      const [left, held] = turn(kph, {left: true});
+      const [right] = turn(kph, {right: true});
+      assert.ok(Math.abs(left / tap - 1) < 0.01, spec.id + " turn-in at " + kph);
+      assert.ok(Math.abs(held / rate - 1) < 0.01, spec.id + " held turn at " + kph);
+      assert.ok(Math.abs(left + right) < 0.001);
+    }
+  }
+});

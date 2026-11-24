@@ -137,17 +137,14 @@ export class VehiclePhysics {
       h.steerResponse * (steering ? 1 : 1.35),
       dt,
     );
-    const lock = Math.min(
-      h.steeringLock,
-      Math.atan(
-        ((surface?.grip ?? 1) * h.cornering * this.spec.wheelbase) /
-          (speed * speed + 0.01),
-      ),
+    // Wheel lock sets the turning radius at parking speeds. At race speeds,
+    // compensate for distance travelled so equal key presses give equal yaw.
+    const curvature = s.steeringInput * Math.min(
+      Math.tan(h.steeringLock) / this.spec.wheelbase,
+      (h.turnRate * (surface?.grip ?? 1)) / Math.max(0.01, Math.abs(speed)),
     );
-    s.steer = s.steeringInput * lock * (1 - s.airborne);
-    const roadYaw =
-      ((Math.tan(s.steer) * speed) / this.spec.wheelbase) *
-      (input.handbrake ? 1.18 : 1);
+    s.steer = Math.atan(curvature * this.spec.wheelbase) * (1 - s.airborne);
+    const roadYaw = curvature * speed * (input.handbrake ? 1.18 : 1);
     // Opposed side ports apply a yaw couple. Counter-thrust settles the nose on release.
     const desiredYaw = s.steeringInput * flight.yaw;
     const yawDrag = 0.9,
@@ -161,7 +158,7 @@ export class VehiclePhysics {
         -1,
         1,
       );
-    const groundRate = damp(this.yawRate, roadYaw, h.steerResponse, dt);
+    const groundRate = damp(this.yawRate, roadYaw, h.steerResponse * 1.8, dt);
     this.yawRate +=
       (groundRate - this.yawRate) * (1 - s.airborne) +
       (jetAuthority * s.sideThrust - yawDrag * this.yawRate * s.airborne) * dt;
