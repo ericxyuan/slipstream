@@ -93,17 +93,17 @@
       <section class="drive-hud" aria-label="Driving instruments">
         <div class="drive-inputs">
           <div class="axis-row">
-            <div class="axis-labels"><span>Brake</span><span>Throttle</span></div>
+            <div class="axis-labels"><span>Brake <b id="brake-value">0%</b></span><span>Throttle <b id="throttle-value">0%</b></span></div>
             <div class="input-axis" id="pedal-axis"><i></i><b></b></div>
           </div>
           <div class="axis-row">
             <div class="axis-labels"><span>L</span><span>Steer</span><span>R</span></div>
             <div class="input-axis" id="steer-axis"><i></i><b></b></div>
           </div>
-          <div class="acceleration" title="Magnitude of lateral and vertical acceleration">
+          <div class="acceleration" title="Magnitude of forward, lateral and vertical acceleration">
             <span>Acceleration</span><output id="acceleration">0.00 m/s² · 0.00 g</output>
           </div>
-          <div class="drive-lamps"><span id="boost-lamp">Boost</span><span id="hand-lamp">Handbrake</span></div>
+          <div class="drive-lamps"><span id="boost-lamp">Boost <b id="boost-value">0%</b></span><span id="hand-lamp">Handbrake</span></div>
         </div>
         <div class="instruments">
         <div class="speed-row">
@@ -119,7 +119,7 @@
             <div class="shift-back"><i id="brake-level"></i><i id="regen-level"></i></div>
             <div class="revbar" aria-hidden="true"></div>
           </div>
-          <div class="shift-legend"><span>Brake</span><span id="regen-label">Regen</span></div>
+          <div class="shift-legend"><span>Brake</span><span id="regen-label">Regen <b id="regen-value">0%</b><small id="regen-power">0 kW</small></span></div>
         </div>
       <aside class="minimap" aria-label="Course minimap">
         <div class="map-caption"><span>Course map</span><span>N ↑</span></div>
@@ -188,14 +188,26 @@
     </dialog>
     <dialog id="result-dialog" aria-labelledby="result-title">
       <div class="dialog-heading">
-        <h2 id="result-title">Race results</h2>
+        <div>
+          <h2 id="result-title">Race results</h2>
+          <p id="result-course"></p>
+        </div>
         <button class="close" aria-label="Close results">×</button>
       </div>
-      <p id="result-course"></p>
-      <div class="result-time">
-        <span>Total time</span><strong id="result-time"></strong>
+      <div class="results-body">
+        <div class="result-summary">
+          <div>
+            <span id="result-label" class="result-label">Finish time</span>
+            <strong id="result-time"></strong>
+          </div>
+          <div class="result-entry">
+            <span class="result-label">Vehicle</span>
+            <strong id="result-vehicle"></strong>
+            <span id="result-edition"></span>
+          </div>
+        </div>
+        <div id="result-stats"></div>
       </div>
-      <dl id="result-stats"></dl>
       <div class="result-actions">
         <button id="result-retry" class="primary-button">Race again</button
         ><button id="result-courses" class="secondary-button">Courses</button>

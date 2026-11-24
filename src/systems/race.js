@@ -1,3 +1,4 @@
+import { accelerationMagnitude } from "../vehicle/telemetry.js";
 import { crossing } from "../world/courses.js";
 
 export const terminal = (phase) =>
@@ -21,6 +22,8 @@ export class Race {
     this.lineTime = null;
     this.maxSpeed = 0;
     this.maxAccel = 0;
+    this.meanAccel = 0;
+    this.accelDuration = 0;
     this.maxSlip = 0;
     this.finishSpeed = 0;
   }
@@ -74,10 +77,14 @@ export class Race {
       this.course.id === "sky",
     );
     this.elapsed = Math.max(0, now - this.green);
-    this.maxAccel = Math.max(
-      this.maxAccel,
-      (b.groundSpeed - a.groundSpeed) / dt,
-    );
+    const acceleration = accelerationMagnitude(b);
+    const finalGate = this.next === this.course.gates.length - 1 && this.lap === (this.course.config?.laps ?? 1);
+    const measured = Math.max(0, (finalGate && f !== null ? beforeTime + f * dt : this.elapsed) - beforeTime);
+    if (measured > 0 && Number.isFinite(acceleration)) {
+      this.maxAccel = Math.max(this.maxAccel, acceleration);
+      this.accelDuration += measured;
+      this.meanAccel += (acceleration - this.meanAccel) * measured / this.accelDuration;
+    }
     this.maxSpeed = Math.max(this.maxSpeed, b.groundSpeed);
     this.maxSlip = Math.max(this.maxSlip, b.wheelSlip);
     if (f === null) return;
@@ -104,6 +111,8 @@ export class Race {
         "completedLaps",
         "maxSpeed",
         "maxAccel",
+        "meanAccel",
+        "accelDuration",
         "finishSpeed",
         "maxSlip",
         "green",

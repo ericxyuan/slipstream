@@ -211,9 +211,9 @@ test("race-specific fields match the active format, map and party", async () => 
   const sky = eventOptions("sky", "free", "custom", false);
   assert.ok(!sky.surface && !sky.sections && !sky.vehicleClass && !sky.countdown);
 });
-test("the acceleration display combines lateral and vertical components in both units", async () => {
+test("the acceleration display combines longitudinal, lateral and vertical components in both units", async () => {
   const { combinedAcceleration } = await import("../src/systems/readouts.js");
-  assert.equal(combinedAcceleration({ lateralAccel: -3, verticalAccel: 4, acceleration: 50 }), "5.00 m/s² · 0.51 g");
+  assert.equal(combinedAcceleration({ lateralAccel: -3, verticalAccel: 4, acceleration: -12 }), "13.00 m/s² · 1.33 g");
 });
 test("only the U9 accepts jump and only the Roadster accepts lift", async () => {
   const { supportsControl } = await import("../src/vehicle/classes.js");
@@ -223,4 +223,21 @@ test("only the U9 accepts jump and only the Roadster accepts lift", async () => 
     assert.equal(supportsControl(v, "lower"), !!v.flying);
     assert.equal(supportsControl(v, "forward"), true);
   }
+});
+
+test("race acceleration includes cornering, braking and lift through the finish crossing", () => {
+  const course = makeCourse({map: "drag", format: "drag", distance: 50});
+  const r = new Race(course);
+  r.start(0);
+  const state = (z, acceleration, lateralAccel, verticalAccel) => ({
+    x: 0, z, altitude: 0, groundSpeed: 12, wheelSlip: 0, acceleration, lateralAccel, verticalAccel,
+  });
+  const car = {previous: state(-47, 0, 0, 0), state: state(-49, 0, 3, 4), step() {}};
+  r.step(car, {}, STEP, r.green + STEP);
+  car.previous = car.state;
+  car.state = state(-51, -12, 3, 4);
+  r.step(car, {}, STEP, r.green + 2 * STEP);
+  assert.equal(r.phase, "finished");
+  assert.equal(r.maxAccel, 13);
+  assert.ok(Math.abs(r.result().meanAccel - (5 + 13 * 0.5) / 1.5) < 1e-9);
 });

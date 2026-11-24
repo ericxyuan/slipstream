@@ -4,7 +4,8 @@ import { defaults, eventOptions, formats, makeCourse } from "../world/events.js"
 import { vehicles } from "../vehicle/catalog.js";
 import { GaragePreview } from "./garage-preview.js";
 import { terminal } from "./race.js";
-import { accelerationText, formatTime } from "./readouts.js";
+import { renderRaceResults } from "./race-results.js";
+import { formatTime } from "./readouts.js";
 const el = (id) => document.getElementById(id);
 const tabs = [
   "Drive",
@@ -621,11 +622,10 @@ export class RaceUI {
         !m.players.every(p => p.result.phase === "countdown" || terminal(p.result.phase));
     }
   }
-  update(s, vehicle) {
+  update(s) {
     const r = this.race,
       c = r.course,
       phase = r.phase;
-    this.vehicle = vehicle;
     const cyclesEnabled = this.canCycle();
     if (this.cyclesEnabled !== cyclesEnabled) {
       this.cycleButtons.forEach(b => { b.hidden = !cyclesEnabled; });
@@ -688,50 +688,8 @@ export class RaceUI {
     }
   }
   finish() {
-    const room = this.api.party(),
-      r = this.race,
-      c = r.course;
-    el("result-title").textContent = "Race results";
-    el("result-course").textContent =
-      c.name + " · " + formats[c.format] + " · " + c.config.rules;
-    el("result-time").textContent =
-      r.phase === "finished" ? formatTime(r.elapsed) : r.phase;
-    const dl = el("result-stats");
-    dl.replaceChildren();
-    const rows = room.state
-      ? [...room.state.players].sort(
-          (a, b) =>
-            (a.result.phase === "finished" ? a.result.elapsed : Infinity) -
-            (b.result.phase === "finished" ? b.result.elapsed : Infinity),
-        )
-      : [
-          {
-            name: "Driver",
-            vehicle: this.vehicle?.id ?? "rally",
-            color: "var(--accent)",
-            result: r,
-          },
-        ];
-    rows.forEach((p, i) => {
-      const dt = document.createElement("dt"),
-        dd = document.createElement("dd"),
-        v = vehicles.find((v) => v.id === p.vehicle),
-        t = p.result;
-      dt.textContent =
-        (t.phase === "finished" ? i + 1 + ". " : "") + p.name + " · " + v.name;
-      dt.style.color = p.color;
-      dd.textContent = [
-        t.phase,
-        t.phase === "finished" ? formatTime(t.elapsed) : "—",
-        "Reaction " + formatTime(t.reaction),
-        "Line " + formatTime(t.lineTime),
-        "Finish " + (t.finishSpeed * 3.6).toFixed(1) + " km/h",
-        "Peak " + accelerationText(t.maxAccel),
-        "Mean " + accelerationText(t.elapsed ? t.finishSpeed / t.elapsed : 0),
-        t.completedLaps + " lap(s)",
-      ].join(" · ");
-      dl.append(dt, dd);
-    });
+    const room = this.api.party();
+    renderRaceResults(this.results, this.race, room, vehicles[this.api.fleet.index]);
     el("result-retry").hidden = !!room.id;
     if (!this.results.open) {
       this.dialog.close();

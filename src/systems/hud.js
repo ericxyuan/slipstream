@@ -1,3 +1,4 @@
+import { MAX_REGEN } from "../vehicle/telemetry.js";
 import { combinedAcceleration, motionNames } from "./readouts.js";
 import { Minimap } from "./minimap.js";
 import { gear } from "../vehicle/physics.js";
@@ -7,6 +8,9 @@ function segments(el, count) {
     el.appendChild(document.createElement("i")),
   );
 }
+function setText(el, value) {
+  if (el.textContent !== value) el.textContent = value;
+}
 function setAxis(el, left, right) {
   el.style.setProperty("--left", (left * 50).toFixed(1) + "%");
   el.style.setProperty("--right", (right * 50).toFixed(1) + "%");
@@ -14,6 +18,7 @@ function setAxis(el, left, right) {
 export class Hud {
   constructor() {
     this.map = new Minimap(byId("minimap"));
+    this.readouts = Object.fromEntries(["throttle-value", "brake-value", "boost-value", "regen-value", "regen-power"].map(id => [id, byId(id)]));
     this.pedals = byId("pedal-axis");
     this.steer = byId("steer-axis");
     this.altitude = byId("altitude");
@@ -35,6 +40,7 @@ export class Hud {
     document.querySelector(".flight-controls").hidden = !spec.flying;
     document.querySelector('[data-control="jump"]').hidden = !spec.jump;
     byId("regen-label").hidden = byId("regen-level").hidden = !spec.electric;
+    this.electric = spec.electric;
     this.flying = spec.flying;
   }
   update(s, input, dt) {
@@ -55,7 +61,16 @@ export class Hud {
     setAxis(this.pedals, s.brake, s.throttle);
     setAxis(this.steer, Math.max(0, s.steeringInput), Math.max(0, -s.steeringInput));
     byId("acceleration").value = combinedAcceleration(s);
-    byId("regen-level").style.transform = "scaleX(" + s.regen / 4 + ")";
+    const percent = n => Math.round(n * 100) + "%";
+    setText(this.readouts["throttle-value"], percent(s.throttle));
+    setText(this.readouts["brake-value"], percent(s.brake));
+    setText(this.readouts["boost-value"], percent(s.boost));
+    if (this.electric) {
+      const fraction = s.regen / MAX_REGEN;
+      setText(this.readouts["regen-value"], Number((100 * fraction).toFixed(1)) + "%");
+      setText(this.readouts["regen-power"], Math.round(s.regenPower || 0) + " kW");
+      byId("regen-level").style.transform = "scaleX(" + fraction + ")";
+    }
     byId("brake-level").style.transform = "scaleX(" + s.brake + ")";
     byId("boost-lamp").classList.toggle("on", s.boost > 0.1);
     byId("hand-lamp").classList.toggle("on", !!input.handbrake);

@@ -291,7 +291,7 @@ function start() {
     });
     ui.partyUpdate(m);
     if (m.active && m.players.every((p) => terminal(p.result.phase))) {
-      if (!ended || ui.results.open) ui.finish();
+      if (!ended) ui.finish();
       ended = true;
     }
   }
@@ -428,7 +428,7 @@ function start() {
     }
     const spec = vehicles[fleet.index],
       surface = surfaceAt(course, state.x, state.z);
-    ui.update(state, spec);
+    ui.update(state);
     fleet.update(dt, state, roll, state.brake > 0.12 || state.regen > 1.3);
     peers.update(party.state, party.id, state, dt, course.id, surface);
     rig.update(state, dt, snap);

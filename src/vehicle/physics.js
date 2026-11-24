@@ -1,3 +1,4 @@
+import { accelerationMagnitude, MAX_REGEN } from "./telemetry.js";
 import { wheelDrive } from "./powertrain.js";
 import { surfaceAt } from "../world/surfaces.js";
 import { lift, flight } from "./lift.js";
@@ -27,6 +28,7 @@ export const SPAWN = {
   lateralAccel: 0,
   peakAccel: 0,
   regen: 0,
+  regenPower: 0,
   energy: 0,
   battery: 0.75,
   boost: 0,
@@ -209,9 +211,9 @@ export class VehiclePhysics {
       s.battery < 0.999 && this.spec.electric && !s.airborne
         ? Math.min(traction, Math.abs(speed) / dt, Math.abs(speed) * 0.9)
         : 0;
-    s.regen = Math.min(regenLimit, (1 - s.throttle) * (1.5 + 2.5 * s.brake));
-    const recovered =
-      (s.regen * this.spec.mass * Math.abs(speed) * dt * 0.75) / 3600000;
+    s.regen = Math.min(regenLimit, (1 - s.throttle) * (1.5 + (MAX_REGEN - 1.5) * s.brake));
+    s.regenPower = (s.regen * this.spec.mass * Math.abs(speed) * 0.75) / 1000;
+    const recovered = s.regenPower * dt / 3600;
     s.energy += recovered;
     if (this.spec.electric) {
       const electricShare = this.spec.hybrid ? 1 - s.engineLoad * 0.65 : 1;
@@ -338,7 +340,7 @@ export class VehiclePhysics {
       ((this.vx - previousVX) * fX + (this.vz - previousVZ) * fZ) / dt;
     s.lateralAccel =
       (-(this.vx - previousVX) * fZ + (this.vz - previousVZ) * fX) / dt;
-    s.peakAccel = Math.max(s.peakAccel, s.acceleration);
+    s.peakAccel = Math.max(s.peakAccel, accelerationMagnitude(s));
     s.pitch = damp(
       s.pitch,
       flying ? (-s.verticalSpeed / flight.climb) * flight.pitch : 0,
