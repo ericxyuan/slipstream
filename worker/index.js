@@ -1,3 +1,4 @@
+import { sitesOrigin } from "../src/systems/party-endpoints.js";
 import { eligible, supportsControl } from "../src/vehicle/classes.js";
 import { makeCourse, validate, defaults } from "../src/world/events.js";
 import { vehicles } from "../src/vehicle/catalog.js";
@@ -29,9 +30,11 @@ export default {
     const url = new URL(req.url);
     if (url.pathname === "/api/health")
       return json({ service: "SlipStream", ok: true });
-    if (req.headers.get("Origin") && req.headers.get("Origin") !== url.origin)
+    const origin = req.headers.get("Origin");
+    if (origin && origin !== url.origin && origin !== sitesOrigin)
       return json({ error: "Invalid origin" }, 403);
     if (url.pathname === "/api/parties" && req.method === "POST") {
+      let result = json({ error: "Please try again" }, 503);
       for (let i = 0; i < 16; i++) {
         const code = randomCode(),
           stub = env.PARTIES.get(env.PARTIES.idFromName(code));
@@ -39,9 +42,16 @@ export default {
           method: "POST",
           body: code,
         });
-        if (resp.status === 201) return resp;
+        if (resp.status === 201) {
+          result = resp;
+          break;
+        }
       }
-      return json({ error: "Please try again" }, 503);
+      if (origin !== sitesOrigin) return result;
+      const response = new Response(result.body, result);
+      response.headers.set("Access-Control-Allow-Origin", sitesOrigin);
+      response.headers.append("Vary", "Origin");
+      return response;
     }
     const match = /^\/api\/parties\/([A-Z]{4})\/socket$/.exec(url.pathname);
     if (match && req.headers.get("Upgrade")?.toLowerCase() === "websocket")

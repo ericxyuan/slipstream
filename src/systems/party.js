@@ -1,3 +1,5 @@
+import { partyEndpoint } from "./party-endpoints.js";
+
 export class PartyClient {
   constructor(onState, onMessage) {
     this.onState = onState;
@@ -16,7 +18,7 @@ export class PartyClient {
     }
   }
   async create(name) {
-    const r = await fetch("/api/parties", { method: "POST" });
+    const r = await fetch(partyEndpoint(location.origin), { method: "POST" });
     if (!r.ok || !r.headers.get("content-type")?.includes("json"))
       throw Error("Multiplayer requires the Cloudflare game server.");
     const { code, claim } = await r.json();
@@ -33,13 +35,7 @@ export class PartyClient {
     this.connect();
   }
   connect() {
-    const ws = new WebSocket(
-      (location.protocol === "https:" ? "wss://" : "ws://") +
-        location.host +
-        "/api/parties/" +
-        this.room +
-        "/socket",
-    );
+    const ws = new WebSocket(partyEndpoint(location.origin, this.room));
     this.ws = ws;
     this.seq = 0;
     ws.onopen = () =>
