@@ -34,6 +34,7 @@ export class Input {
       (e) => {
         if (
           document.querySelector("dialog[open]") ||
+          e.target.closest?.(".conditions") ||
           e.ctrlKey ||
           e.metaKey ||
           !e.deltaY ||

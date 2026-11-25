@@ -1,6 +1,7 @@
+import { clearPosition } from "./clearance.js";
 import * as T from "three";
 import { box, paint, solid, batchStatic, randomSource } from "./geometry.js";
-import { road, addRoad, roadDistance, grainTexture } from "./road.js";
+import { road, addRoad, clearOfDesert, roadDistance, grainTexture } from "./road.js";
 
 export function buildDesert(scene) {
   const props = new T.Group(),
@@ -88,6 +89,8 @@ export function buildDesert(scene) {
     g.setAttribute("position", new T.Float32BufferAttribute(pos, 3));
     g.setAttribute("color", new T.Float32BufferAttribute(col, 3));
     g.computeVertexNormals();
+    // The irregular base can extend beyond the physical ellipse.
+    ({x,z} = clearPosition(clearOfDesert, x, z, Math.max(rx,rz)*1.22*1.11));
     const m = solid(props, g, stone, x, -0.2, z);
     m.castShadow = false;
     if (!far)
@@ -150,13 +153,15 @@ export function buildDesert(scene) {
       roadside("rock", x, z, size);
       return;
     }
+    ({x,z} = clearPosition(clearOfDesert, x, z, Math.max(m.scale.x, m.scale.y, m.scale.z, size*1.18)));
+    m.position.set(x, m.position.y, z);
     if (size > 0.65)
       collisions.push({ x, z, rx: size * 1.18, rz: size, height: size });
   }
   function cactus(x, z, h) {
     const mat = greens[Math.floor(rand() * 3)],
       r = h * 0.055;
-    const loosePlant = roadDistance(x, z) < 23;
+    const loosePlant = roadDistance(x, z) < 23 || !clearOfDesert(x,z,h*0.4);
     function limb(points, rad) {
       if (loosePlant) return;
       const curve = new T.CatmullRomCurve3(
@@ -226,7 +231,8 @@ export function buildDesert(scene) {
     const g = new T.BufferGeometry();
     g.setAttribute("position", new T.Float32BufferAttribute(pos, 3));
     g.computeVertexNormals();
-    solid(props, g, grassMat[Math.floor(rand() * 3)], x, 0, z);
+    const at = clearPosition(clearOfDesert,x,z,1.4*s);
+    solid(props, g, grassMat[Math.floor(rand() * 3)], at.x, 0, at.z);
   }
   for (let i = 0; i < 2200; i++) {
     const x = rand() * 490 - 250,
@@ -267,6 +273,7 @@ export function buildDesert(scene) {
       roadside("post", x, z);
       return;
     }
+    ({x,z} = clearPosition(clearOfDesert, x, z, 0.15));
     box(props, post, x, 0.48, z, 0.105, 0.96, 0.12);
     box(props, black, x, 0.8, z, 0.11, 0.21, 0.126);
     box(props, reflector, x, 0.81, z + 0.066, 0.075, 0.055, 0.008);

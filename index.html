@@ -42,6 +42,20 @@
       </div>
       <span class="division"></span
       ><span class="product">Driving simulator</span>
+      <div class="conditions" role="group" aria-label="Environment">
+        <label class="condition-range">
+          <span>Time <span id="clock-label"></span></span>
+          <input id="time-of-day" aria-label="Time of day" type="range" min="0" max="1439" step="1" value="840">
+        </label>
+        <label class="condition-range">
+          <span>Weather <span id="weather-label"></span></span>
+          <input id="weather" aria-label="Weather" type="range" min="0" max="100" step="1" value="0">
+        </label>
+        <label class="condition-switch" title="Gradually change time and weather">
+          <input id="auto-conditions" type="checkbox" role="switch" aria-label="Automatic time and weather">
+          <i aria-hidden="true"></i>Auto
+        </label>
+      </div>
       <button id="choose-course" class="course-button" aria-haspopup="dialog">
         <svg><use href="#pin" /></svg> Menu <kbd>X</kbd>
       </button>

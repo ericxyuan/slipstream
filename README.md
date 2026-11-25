@@ -25,6 +25,8 @@ X opens the menu. Maps enters free drive. Race Configuration chooses the map, ro
 
 Brinewater Causeway is a coastal loop with three signed forks. Lantern Point, Saltworks and Reedbank each lead back to the loop. Either road counts toward race checkpoints in both directions.
 
+Use the top-bar Time and Weather sliders to set the hour and move from clear skies through haze and cloud to rain and downpour. Auto gradually advances the clock and picks new weather targets. Moving either slider returns both controls to manual. Conditions are local to each driver and affect visibility and lighting.
+
 Create or join a four-letter code under Multiplayer. The host sets the event. Drivers choose their vehicle and mark themselves ready. The host starts the countdown after everyone is ready. Player input travels over WebSockets. The server runs movement, checks each directed gate and resolves vehicle and prop impulses. Results include valid finishes, false starts and DNF. A disconnected browser may reconnect with its session token during the 30-second grace period. Empty rooms expire. Up to twelve drivers are supported per party.
 
 ## Vehicles and simulation

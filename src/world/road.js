@@ -1,3 +1,4 @@
+import { sceneryClearance } from "./clearance.js";
 import * as T from "three";
 import { paint, solid, randomSource } from "./geometry.js";
 
@@ -23,7 +24,9 @@ export const road = new T.CatmullRomCurve3(
   path.map(([x, z]) => new T.Vector3(x, 0, z)),
   true,
 );
-const samples = road.getSpacedPoints(480);
+export const desertRoadPoints = road.getSpacedPoints(480);
+const samples = desertRoadPoints;
+export const clearOfDesert = sceneryClearance([samples], 8.5);
 export function roadDistance(x, z) {
   let nearest = Infinity;
   for (const p of samples)

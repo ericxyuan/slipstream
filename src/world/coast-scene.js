@@ -1,3 +1,4 @@
+import { clearPosition, roadsideMargin } from "./clearance.js";
 import * as T from "three";
 import { batchStatic, box, paint, randomSource, solid } from "./geometry.js";
 import { grainTexture } from "./road.js";
@@ -7,7 +8,7 @@ import {
   coastRoads,
   coastPools,
   coastSolids,
-  onCoastRoad,
+  clearOfCoast,
 } from "./coast.js";
 
 function ribbon(group, points, left, right, y, material, visible = () => true) {
@@ -45,7 +46,9 @@ function routeSign(group, name, p, next, branchPoint, post, board) {
     dz = next.z - p.z,
     len = Math.hypot(dx, dz);
   const sign = new T.Group();
-  sign.position.set(p.x - (dz / len) * 10.7, 0, p.z + (dx / len) * 10.7);
+  const offset = 8.7 + roadsideMargin + 3.3;
+  const at = clearPosition(clearOfCoast, p.x - (dz / len) * offset, p.z + (dx / len) * offset, 3.2);
+  sign.position.set(at.x, 0, at.z);
   sign.rotation.y = Math.atan2(-dx, -dz);
   group.add(sign);
   for (const x of [-2.1, 2.1]) box(sign, post, x, 1.6, 0, 0.17, 3.2, 0.17);
@@ -134,7 +137,7 @@ export function buildCoast(group, course) {
       const angle = rand() * Math.PI * 2;
       const px = x + Math.cos(angle) * w,
         pz = z + Math.sin(angle) * d;
-      if (!onCoastRoad(px, pz, 9)) tussock(px, pz, 1 + rand() * 0.8);
+      if (clearOfCoast(px, pz, 1.8)) tussock(px, pz, 1 + rand() * 0.8);
       const r = rand() * 0.8;
       box(
         group,
@@ -208,9 +211,9 @@ export function buildCoast(group, course) {
     const p = pointRoad[i],
       q = pointRoad[i + 1],
       len = Math.hypot(q.x - p.x, q.z - p.z);
-    const x = p.x - ((q.z - p.z) / len) * 9.4,
-      z = p.z + ((q.x - p.x) / len) * 9.4;
-    if (onCoastRoad(x, z, 9)) continue;
+    const x = p.x - ((q.z - p.z) / len) * (9.1 + roadsideMargin),
+      z = p.z + ((q.x - p.x) / len) * (9.1 + roadsideMargin);
+    if (!clearOfCoast(x, z, 0.21)) continue;
     box(group, white, x, 0.82, z, 0.27, 1.64, 0.27);
     box(group, red, x, 1.22, z, 0.29, 0.3, 0.29);
   }
@@ -298,13 +301,15 @@ export function buildCoast(group, course) {
         -197,
       );
       pile.scale.z = 0.75;
+      const safe = clearPosition(clearOfCoast, pile.position.x, pile.position.z, 2.6);
+      pile.position.set(safe.x, pile.position.y, safe.z);
     }
 
   // Fescue clumps and distant island silhouettes give scale between junctions.
   for (let i = 0; i < 260; i++) {
     const x = rand() * 410 - 210,
       z = rand() * 430 - 245;
-    if (onCoastRoad(x, z, 9)) continue;
+    if (!clearOfCoast(x, z, 1.4)) continue;
     tussock(x, z, 0.65 + rand() * 0.65);
   }
   for (let i = 0; i < 16; i++) {

@@ -1,3 +1,4 @@
+import { bindConditions } from "./systems/conditions.js";
 import { buildCoast } from "./world/coast-scene.js";
 import { nearestGate } from "./world/courses.js";
 import { eligible, supportsControl } from "./vehicle/classes.js";
@@ -41,6 +42,7 @@ function fail(text) {
 }
 function start() {
   const { renderer, scene, draw, atmosphere } = initRenderer(canvas);
+  const conditions = bindConditions();
   const desert = new T.Group(),
     rocks = buildDesert(desert),
     physics = new VehiclePhysics(rocks),
@@ -438,7 +440,8 @@ function start() {
     hud.update(state, controls, elapsed);
     audio.update("local", state, spec, state, surface, course.id);
     stripScenery?.userData.followStrip(state.z);
-    draw(rig.camera, state);
+    conditions.update(elapsed);
+    draw(rig.camera, state, conditions.state, dt);
   }
   frameId = requestAnimationFrame(frame);
 }

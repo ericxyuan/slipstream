@@ -1,3 +1,4 @@
+import { sceneryClearance, clearPosition } from "./clearance.js";
 // Metres in the X/Z plane. Both the renderer and the race authority sample these roads.
 import { CatmullRomCurve3, Vector3 } from "three";
 
@@ -72,13 +73,17 @@ for (const branch of coastBranches)
   });
 
 export const coastRoads = [coastLoop, ...coastBranches.map((b) => b.points)];
+export const clearOfCoast = sceneryClearance(coastRoads, 8.7);
 export const coastSolids = [
   { x: 152, z: -29, rx: 4.4, rz: 4.4, height: 33 },
   { x: 141, z: -29, rx: 4.5, rz: 3, height: 6, rectangle: true },
   { x: -18, z: -205, rx: 8, rz: 4, height: 6, rectangle: true },
   { x: 3, z: -205, rx: 8, rz: 4, height: 6, rectangle: true },
   { x: -110, z: 45, rx: 4.5, rz: 3, height: 5, rectangle: true },
-];
+].map(o => {
+  const radius = o.rectangle ? Math.hypot(o.rx + 0.5, o.rz + 0.5) : 5.6;
+  return {...o, ...clearPosition(clearOfCoast, o.x, o.z, radius)};
+});
 
 // Shallow intertidal pools remain traversable on soft ground.
 export const coastPools = [
