@@ -262,6 +262,8 @@ export class Party {
           p.input = Object.fromEntries(
             allowed.map((k) => [k, msg.controls?.[k] === true && supportsControl(p.car.spec, k)]),
           );
+          if (Number.isFinite(msg.controls?.steer))
+            p.input.steer = Math.max(-1, Math.min(1, msg.controls.steer));
           p.ping = Math.max(0, Math.min(10000, Number(msg.ping) || 0));
           return;
         }

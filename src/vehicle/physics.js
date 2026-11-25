@@ -45,6 +45,10 @@ const approach = (value, target, step) =>
   value + clamp(target - value, -step, step);
 const damp = (value, target, rate, dt) =>
   value + (target - value) * -Math.expm1(-rate * dt);
+export function roadYawLimit(handling, speed, grip) {
+  const fraction = clamp((Math.abs(speed) * 3.6 - 45) / 155, 0, 1);
+  return handling.turnRate * (1 - 0.175 * ease(fraction)) * grip;
+}
 export function gear(speed) {
   if (Math.abs(speed) < 0.22) return "N";
   return speed < 0 ? "R" : String(Math.min(6, 1 + Math.floor(speed / 8.4)));
@@ -130,7 +134,7 @@ export class VehiclePhysics {
     s.throttle = ease(Math.abs(this.pedal));
     s.brake = ease(this.brakePedal);
     const drive = Math.sign(this.pedal) * s.throttle * (1 - s.brake);
-    const steering = Number(!!input.left) - Number(!!input.right);
+    const steering = input.steer ?? (Number(!!input.left) - Number(!!input.right));
     s.steeringInput = damp(
       s.steeringInput,
       steering,
@@ -139,12 +143,9 @@ export class VehiclePhysics {
     );
     // Between 45 and 200 km/h, ease out up to 17.5% of each car's road yaw.
     // This takes about 8 degrees off a half-second sports coupe turn on asphalt.
-    const roadSpeedKph = Math.abs(speed) * 3.6;
-    const speedFraction = clamp((roadSpeedKph - 45) / (200 - 45), 0, 1);
-    const turnRate = h.turnRate * (1 - 0.175 * ease(speedFraction));
     const curvature = s.steeringInput * Math.min(
       Math.tan(h.steeringLock) / this.spec.wheelbase,
-      (turnRate * (surface?.grip ?? 1)) / Math.max(0.01, Math.abs(speed)),
+      roadYawLimit(h, speed, surface?.grip ?? 1) / Math.max(0.01, Math.abs(speed)),
     );
     s.steer = Math.atan(curvature * this.spec.wheelbase) * (1 - s.airborne);
     const roadYaw = curvature * speed * (input.handbrake ? 1.18 : 1);

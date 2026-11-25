@@ -27,6 +27,7 @@ import { initRenderer } from "./systems/render.js";
 import { Fleet } from "./vehicle/fleet.js";
 import { VehiclePhysics, STEP } from "./vehicle/physics.js";
 import { CameraRig } from "./systems/camera.js";
+import { SelfDriver } from "./systems/self-driving.js";
 import { Input } from "./systems/input.js";
 import { Hud } from "./systems/hud.js";
 import { DriveAudio } from "./systems/audio.js";
@@ -132,6 +133,13 @@ function start() {
     acc = 0;
     last = null;
   }
+  const driveButton = document.querySelector('[data-control="selfDrive"]');
+  let driver;
+  function setSelfDriving(on) {
+    driver = on ? new SelfDriver(course, physics.spec, physics.state) : null;
+    driveButton.setAttribute("aria-pressed", String(on));
+    driveButton.querySelector("span").textContent = "Self-driving " + (on ? "on" : "off");
+  }
   function restart() {
     if (party.id) {
       if (party.state?.host === party.id) party.send({ type: "reset" });
@@ -139,6 +147,7 @@ function start() {
     }
     clear();
     physics.reset();
+    setSelfDriving(false);
     fleet.exhaust?.clear();
     race = new Race(course);
     clock = 0;
@@ -173,6 +182,8 @@ function start() {
       disposeCourse(overlay);
     }
     course = next;
+    setSelfDriving(false);
+    driveButton.hidden = next.id === "sky";
     world = next.id === "desert" ? desert : new T.Group();
     const obs =
       next.id === "desert"
@@ -300,6 +311,9 @@ function start() {
     }
   }
   const input = new Input({
+    selfDrive: () => {
+      if (course.id !== "sky") setSelfDriving(!driver);
+    },
     vehicle: cycle,
     previous: () => cycle(-1),
     next: () => cycle(1),
@@ -374,11 +388,18 @@ function start() {
     const elapsed = last === null ? 0 : (now - last) / 1000;
     last = now;
     const dt = Math.min(0.12, elapsed);
-    const controls = ui.dialog.open || ui.results.open ? {} : input.read();
-    party.input(controls, now);
+    const inMenu = ui.dialog.open || ui.results.open;
+    const manual = inMenu ? {} : input.read();
+    if (driver && driver.spec !== physics.spec) setSelfDriving(true);
+    let controls = manual;
     clock += elapsed;
     acc += dt;
+    const stepped = acc >= STEP;
     while (acc >= STEP) {
+      // The player still supplies the first accelerator press after green.
+      const launched = race.phase === "running" && (race.reaction !== null || manual.forward);
+      controls = driver && !inMenu && (race.phase === "free" || launched)
+        ? driver.controls(physics) : manual;
       if (party.id && remote) {
         if (["running", "free"].includes(race.phase))
           physics.step(controls, STEP);
@@ -403,6 +424,7 @@ function start() {
       }
       acc -= STEP;
     }
+    if (stepped || inMenu || !driver) party.input(controls, now);
     if (party.id && remote && race.phase === "countdown")
       race.countdown = Math.max(
         0,

@@ -136,7 +136,9 @@ export function makeCourse(raw, count = 1, lane = 0) {
     ];
   }
   if (config.reverse) p.reverse();
-  if ((c.closed && format !== "drag") || format === "circuit")
+  // A shortened desert sprint ends on the road. Closing it draws a chord through the dunes.
+  const shortDesert = map === "desert" && config.route === "short" && format !== "circuit";
+  if ((c.closed && format !== "drag" && !shortDesert) || format === "circuit")
     p.push({ ...p[0] });
   const lengths = [0];
   for (let i = 1; i < p.length; i++)

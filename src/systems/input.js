@@ -6,7 +6,8 @@ const keys = {
   KeyP: "partyMenu",
   KeyV: "ready",
   KeyX: "menu",
-  KeyF: "arm",
+  KeyF: "selfDrive",
+  KeyT: "arm",
   Escape: "cancel",
   KeyE: "rise",
   KeyQ: "lower",
@@ -59,9 +60,11 @@ export class Input {
       { passive: false },
     );
     window.addEventListener("keydown", (e) => {
-      if (e.target.closest?.("input,select,textarea,[contenteditable=true]")) return;
-      const dialog = document.querySelector("dialog[open]");
       const action = keys[e.code];
+      const field = e.target.closest?.("input,select,textarea,[contenteditable=true]");
+      const environmentToggle = action === "selfDrive" && field?.closest(".conditions");
+      if (field && !environmentToggle) return;
+      const dialog = document.querySelector("dialog[open]");
       if (dialog && !(action === "menu" || (dialog.id === "course-dialog" &&
           ["ready", "arm"].includes(action) && dialog.querySelector("#party-roster"))))
         return;

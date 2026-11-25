@@ -1756,3 +1756,6 @@ dialog::backdrop {
     display: none;
   }
 }
+
+.self-drive { margin-top: 6px; pointer-events: auto; }
+.self-drive[aria-pressed="true"] { color: var(--accent); border-color: currentColor; }

@@ -232,13 +232,14 @@ export class RaceUI {
           "A D / ← →": "Steer",
           Space: "Handbrake",
           Shift: "Boost",
+          ...(this.race.course.id !== "sky" ? { F: "Toggle self-driving" } : {}),
           ...(vehicles[a.fleet.index].flying ? { "E / Q": "Rise / lower" } : {}),
           ...(vehicles[a.fleet.index].jump ? { J: "Suspension jump" } : {}),
           ...(this.canCycle() ? { SCROLL: "Change active vehicle" } : {}),
           "Left drag": "Freelook",
           C: "Recenter / change camera",
           ...(this.race.phase !== "free" && (!a.party().id || a.party().id === a.party().state?.host)
-            ? { F: "Start race / view results", Esc: "Cancel countdown" } : {}),
+            ? { T: "Start race / view results", Esc: "Cancel countdown" } : {}),
           ...(a.party().id && this.race.phase === "ready" ? { V: "Toggle race readiness" } : {}),
           G: "Race configuration",
           P: "Party management",
@@ -578,7 +579,7 @@ export class RaceUI {
       room.room +
       '</h3><p id="party-roster"></p><p id="party-event"></p>' +
       btn("ready-party", "Toggle ready · V") +
-      btn("arm-party", "Start race · F") +
+      btn("arm-party", "Start race · T") +
       btn("reset-party", "Return to lobby") +
       btn("exit-party", "Leave party");
     el("ready-party").onclick = () => this.ready();
@@ -645,10 +646,10 @@ export class RaceUI {
     if (phase !== this.lastPhase) {
       this.api.audio.tone(phase === "running" ? 780 : 390);
       this.action.textContent = terminal(phase)
-        ? "Results · F"
+        ? "Results · T"
         : phase === "countdown"
           ? "Cancel · Esc"
-          : "Start race · F";
+          : "Start race · T";
       if (terminal(phase) && !this.api.party().id) this.finish();
       this.lastPhase = phase;
     }
