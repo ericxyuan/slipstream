@@ -2,7 +2,7 @@
 // car and its braking point, including bends beyond the lap boundary.
 import { surfaceAt } from "../world/surfaces.js";
 import { roadYawLimit } from "../vehicle/physics.js";
-import { streetsX, streetsZ } from "../world/city.js";
+import { streetsX, streetsZ, roadWidth } from "../world/city.js";
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const distance = (a, b) => Math.hypot(b.x - a.x, b.z - a.z);
@@ -85,28 +85,106 @@ function drivingRoute(course, state, spec) {
   return points;
 }
 
-function roundCorners(points, loop, gates) {
+// Relax the bends across the usable tarmac. Neighbouring bends share the
+// same line, so opening up an entry can also straighten the preceding exit.
+function racingLine(path, loop, spec) {
+  const lengths = [0];
+  for (let i = 1; i < path.length; i++) lengths.push(lengths[i - 1] + distance(path[i - 1], path[i]));
+  const length = lengths.at(-1);
+  const count = Math.max(3, Math.ceil(length / 4));
+  const centre = [];
+  for (let i = 0, j = 1; i <= count; i++) {
+    const at = length * i / count;
+    while (j < lengths.length - 1 && lengths[j] < at) j++;
+    centre.push(mix(path[j - 1], path[j], (at - lengths[j - 1]) / (lengths[j] - lengths[j - 1])));
+  }
+  const index = i => loop ? (i % count + count) % count : clamp(i, 0, count);
+  const line = centre.map(p => ({ ...p }));
+  const normals = centre.map((p, i) => {
+    const a = centre[index(i - 1)], b = centre[index(i + 1)], span = distance(a, b);
+    return { x: (a.z - b.z) / span, z: (b.x - a.x) / span };
+  });
+  // Leave extra tracking room for cars which gain speed rapidly as boost
+  // comes back on after the apex.
+  const room = 7.8 - spec.width / 2 - 1.75 - spec.length * 0.12 -
+    Math.min(0.9, spec.handling.launch * spec.handling.brakeTime ** 2 * 0.12);
+  // Relax at several distances. The wide passes anticipate a turn while
+  // the fine passes remove sudden steering changes at the edge of the line.
+  for (const stride of [8, 4, 2, 1]) {
+    for (let pass = 0; pass < 24; pass++) {
+      for (let i = loop ? 0 : 1; i < count; i++) {
+        const left = index(i - stride), right = index(i + stride);
+        const outerLeft = line[index(i - 2 * stride)], outerRight = line[index(i + 2 * stride)];
+        const a = line[left], b = line[right], p = centre[i], normal = normals[i];
+        // Fourth differences smooth curvature instead of shrinking a circular bend.
+        const x = (4 * (a.x + b.x) - outerLeft.x - outerRight.x) / 6;
+        const z = (4 * (a.z + b.z) - outerLeft.z - outerRight.z) / 6;
+        const offset = clamp((x - p.x) * normal.x + (z - p.z) * normal.z, -room, room);
+        line[i] = { x: p.x + offset * normal.x, z: p.z + offset * normal.z };
+      }
+    }
+  }
+  if (loop) line[count] = line[0];
+  return line;
+}
+
+function roundCorners(points, loop, spec) {
   const path = [];
   const n = points.length - Number(loop);
+  // Blend lateral lane changes along each straight so the car can accelerate
+  // out of the previous arc without a sudden change in steering.
+  function join(entry, dx, dz) {
+    const from = path.at(-1);
+    if (!from) return;
+    const along = (entry.x - from.x) * dx + (entry.z - from.z) * dz;
+    const shiftX = entry.x - from.x - along * dx, shiftZ = entry.z - from.z - along * dz;
+    const steps = Math.ceil(along / 5);
+    for (let j = 1; j < steps; j++) {
+      const t = j / steps, blend = t * t * (3 - 2 * t);
+      path.push({ x: from.x + dx * along * t + shiftX * blend, z: from.z + dz * along * t + shiftZ * blend });
+    }
+  }
+  let firstTangent;
   for (let i = 0; i < n; i++) {
     const p = points[i];
     if (!loop && (i === 0 || i === n - 1)) {
+      if (i > 0) {
+        const a = points[i - 1], span = distance(a, p);
+        join(p, (p.x - a.x) / span, (p.z - a.z) / span);
+      }
       path.push(p);
       continue;
     }
     const a = points[(i + n - 1) % n], b = points[(i + 1) % n];
-    const trim = Math.min(18, distance(a, p) * 0.45, distance(b, p) * 0.45);
-    const entry = mix(p, a, trim / distance(a, p)), exit = mix(p, b, trim / distance(b, p));
-    // Pass through the junction centre. Some timed gates sit exactly on the
-    // incoming street's end plane and an inside-only arc would miss them.
-    const nearGate = gates.some(g => distance(g, p) < trim);
-    const control = nearGate ? mix(p, mix(entry, exit, 0.5), -1.25) : p;
-    for (let j = 0; j <= 8; j++) {
-      const t = j / 8;
-      path.push(mix(mix(entry, control, t), mix(control, exit, t), t));
+    const before = distance(a, p), after = distance(b, p);
+    const dx = (p.x - a.x) / before, dz = (p.z - a.z) / before;
+    const ex = (b.x - p.x) / after, ez = (b.z - p.z) / after;
+    firstTangent ??= { dx, dz };
+    if (Math.abs(dx * ez - dz * ex) < 0.9) {
+      join(p, dx, dz);
+      path.push(p);
+      continue;
+    }
+    // Join the outside of each street with a quarter circle, leaving room
+    // for the body. Its apex must also fit through a junction-centred gate.
+    const margin = spec.width / 2 + spec.length * 0.27 + 2.1;
+    const room = (vertical) => Math.min(4.3, (vertical ? roadWidth("x", p.x) : roadWidth("z", p.z)) / 2 - margin);
+    const entryOffset = Math.min(room(Math.abs(dz) > 0.5), after * 0.15);
+    const exitOffset = Math.min(room(Math.abs(ez) > 0.5), before * 0.15);
+    const radius = Math.min(29, 11 + 2.2 * Math.min(entryOffset, exitOffset),
+      before * 0.43 + exitOffset, after * 0.43 + entryOffset);
+    const pivot = { x: p.x + dx * exitOffset - ex * entryOffset, z: p.z + dz * exitOffset - ez * entryOffset };
+    join({ x: pivot.x - radius * dx, z: pivot.z - radius * dz }, dx, dz);
+    for (let j = 0; j <= 12; j++) {
+      const theta = Math.PI * j / 24;
+      const along = radius * (Math.sin(theta) - 1), across = radius * (1 - Math.cos(theta));
+      path.push({ x: pivot.x + dx * along + ex * across, z: pivot.z + dz * along + ez * across });
     }
   }
-  if (loop) path.push(path[0]);
+  if (loop) {
+    join(path[0], firstTangent.dx, firstTangent.dz);
+    path.push(path[0]);
+  }
   return path;
 }
 
@@ -142,7 +220,8 @@ export class SelfDriver {
     if (this.approach) path = this.approach;
     path = path.filter((p, i) => !i || distance(p, path[i - 1]) > 1e-6);
     this.loop = distance(path[0], path.at(-1)) < 1e-4;
-    if (course.id === "city" && course.format !== "drag") path = roundCorners(path, this.loop, this.approach ? [] : course.gates);
+    if (course.id === "city" && course.format !== "drag") path = roundCorners(path, this.loop, spec);
+    if (course.format !== "drag" && ["coast", "desert"].includes(course.id)) path = racingLine(path, this.loop, spec);
 
     this.points = [path[0]];
     this.arc = [0];
@@ -163,29 +242,38 @@ export class SelfDriver {
     const top = (course.config.rules === "balanced" ? 75 : h.limit) * (spec.mass > 5000 ? 1.29 : 1.19);
     const surface = this.points.map(p => surfaceAt(course, p.x, p.z));
     const n = this.points.length - 1;
+    this.precisionTurn = course.id === "drag" || Boolean(this.approach);
+    // Slower steering racks need extra yaw authority to correct the line
+    // as curvature builds, particularly in a bus on a tightening bend.
+    const yawFraction = this.precisionTurn ? 0.89 : clamp(1 - 0.6 / h.steerResponse, 0.88, 0.985);
     this.speed = this.points.map((p, i) => {
       if (!this.loop && (i === 0 || i === n)) return top;
       const a = this.points[(i + n - 1) % n], b = this.points[i === n ? 1 : i + 1];
       const cross = (p.x - a.x) * (b.z - p.z) - (p.z - a.z) * (b.x - p.x);
       const curvature = 2 * Math.abs(cross) / (distance(a, p) * distance(b, p) * distance(a, b) || 1);
+      // Use the full boosted speed whenever the line fits at that speed.
+      if (curvature * top <= yawFraction * roadYawLimit(h, top, surface[i].grip)) return top;
       // Road yaw is speed-limited by the same handling curve as the tyres.
       let low = 0, high = top;
       for (let j = 0; j < 12; j++) {
         const v = (low + high) / 2;
-        if (v * curvature < 0.89 * roadYawLimit(h, v, surface[i].grip)) low = v;
+        if (v * curvature < yawFraction * roadYawLimit(h, v, surface[i].grip)) low = v;
         else high = v;
       }
       return low;
     });
-    this.brakes = surface.map(s => 0.85 * Math.min(h.braking, s.traction));
+    this.brakes = surface.map(s => (this.precisionTurn ? 0.85 : 0.99) * Math.min(h.braking, s.traction));
     // A timed finish freezes the simulation at the line. In free drive, stop
     // before the end of an open road.
     if (!this.loop && (course.format === "free" || this.approach)) this.speed[n] = this.approach ? 4 : 0;
     for (let lap = 0; lap < (this.loop ? 2 : 1); lap++) {
       if (this.loop) this.speed[n] = this.speed[0];
-      for (let i = n - 1; i >= 0; i--)
-        this.speed[i] = Math.min(this.speed[i], Math.sqrt(this.speed[i + 1] ** 2 +
-          2 * this.brakes[i] * (this.arc[i + 1] - this.arc[i])));
+      for (let i = n - 1; i >= 0; i--) {
+        const exitSpeed = this.speed[i + 1];
+        const decel = this.brakes[i] + (this.precisionTurn ? 0 : h.drag * exitSpeed ** 2);
+        this.speed[i] = Math.min(this.speed[i], Math.sqrt(exitSpeed ** 2 +
+          2 * decel * (this.arc[i + 1] - this.arc[i])));
+      }
     }
   }
 
@@ -252,16 +340,28 @@ export class SelfDriver {
       roadYawLimit(h, v, surface.grip) / Math.max(v, 0.1));
     const steer = clamp(2 * Math.sin(clamp(headingError, -Math.PI / 2, Math.PI / 2)) /
       (Math.max(1, Math.hypot(dx, dz)) * maxCurve), -1, 1);
-    const lead = ahead(at + v * (h.brakeTime + 0.12));
+    const responseTime = this.precisionTurn ? h.brakeTime + 0.12 : 0.85 * h.brakeTime + 0.10;
+    const lead = ahead(at + v * responseTime);
     const i = lead.i, gap = (1 - clamp(lead.t, 0, 1)) * (this.arc[i + 1] - this.arc[i]);
+    const decel = this.brakes[i] + (this.precisionTurn ? 0 : h.drag * this.speed[i + 1] ** 2);
     let limit = Math.min(
-      Math.sqrt(this.speed[i + 1] ** 2 + 2 * this.brakes[i] * gap),
+      Math.sqrt(this.speed[i + 1] ** 2 + 2 * decel * gap),
       this.speed[i] + Math.max(0, this.speed[i + 1] - this.speed[i]) * clamp(lead.t, 0, 1),
     );
+    if (!this.precisionTurn && this.course.format !== "drag") {
+      // The brake preview can see the next straight before the car has
+      // cleared a bend. Keep entry speed until the arc opens up.
+      const here = this.speed[p.i] + (this.speed[p.i + 1] - this.speed[p.i]) * p.t;
+      limit = Math.min(limit, here + 1);
+    }
     // Brake early when taking over with a large lateral or heading error.
     if (p.error > 3 || Math.abs(headingError) > 0.65)
       limit = Math.min(limit, Math.max(3, 15 / (1 + p.error * 0.18 + Math.abs(headingError))));
     if (!this.loop && this.course.format === "free" && remaining < 0.7) limit = 0;
+    // The throttle pedal takes time to unwind. Anticipate the residual
+    // acceleration of a loaded powertrain as we approach a braking zone.
+    if (!this.precisionTurn && this.course.format !== "drag" && limit < this.speed[p.i])
+      limit -= Math.max(0, s.acceleration) * h.pedalTime * 0.30;
     const forward = v < limit && limit > 0.1;
     return { steer, left: steer > 0.05, right: steer < -0.05, forward,
       back: v > limit + 0.25 && s.speed > 0.3, boost: forward, lower: !!spec.flying && s.altitude > 0 };

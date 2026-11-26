@@ -63,6 +63,13 @@ test("self-driving completes reverse mixed-surface laps and a shortened desert s
   driveRace({ map: "desert", format: "sprint", route: "short" }, "roadster");
 });
 
+test("the U9 carries race pace around dry circuits with its full body on the road", () => {
+  for (const [map, maxSeconds] of [["desert", 16], ["coast", 18], ["city", 19]]) {
+    const { race } = driveRace({ map, format: "circuit", surface: "asphalt" }, "u9");
+    assert.ok(race.elapsed < maxSeconds, `${map} lap took ${race.elapsed.toFixed(2)} s`);
+  }
+});
+
 test("self-driving holds its assigned drag lane at full throttle through the finish", () => {
   const { car, race, braking } = driveRace({ map: "desert", format: "drag", distance: 1600, reverse: true }, "sport", 8, 1);
   assert.equal(car.state.x, car.course.spawn.x);
